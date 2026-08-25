@@ -1,36 +1,29 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Visual-Testing-Automation
 
-## Getting Started
+Compare a live webpage section to a Figma frame (or a design page) with Playwright. Dummy design copy is detected and masked so layout accuracy can still approach 100% even when the product uses real data.
 
-First, run the development server:
+There is no database. Each run lives in memory for that browser session and disappears on refresh.
+
+## Scripts
 
 ```bash
+npm install
+npx playwright install chromium
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000), click **Use local demo**, then **Run visual test**.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Live page: `/demo/webpage` (`#compare-target`)
+- Dummy Figma stand-in: `/demo/figma` (same id, placeholder copy)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Real Figma files
 
-## Learn More
+1. Select the frame in Figma and copy the link (it must include `node-id`).
+2. Create `.env.local` with a personal access token:
 
-To learn more about Next.js, take a look at the following resources:
+```
+FIGMA_ACCESS_TOKEN=figd_...
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. Restart `npm run dev` and paste the Figma URL into the form.

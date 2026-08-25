@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="720" viewBox="0 0 960 720" fill="none">
+  <title>Aurora Analytics  Figma dummy design (compare-target)</title>
+  <desc>Dummy-text design for Visual-Testing-Automation. Import into Figma via drag-and-drop or File ’ Place image / paste SVG.</desc>
+
+  <!-- Page background -->
+  <rect width="960" height="720" fill="#FFFFFF"/>
+
+  <!-- Card shell -->
+  <rect x="48" y="48" width="864" height="624" rx="16" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="1"/>
+
+  <!-- Header bar -->
+  <rect x="48" y="48" width="864" height="72" fill="#FFFFFF"/>
+  <line x1="48" y1="120" x2="912" y2="120" stroke="#E5E5E5"/>
+
+  <!-- Logo mark AA -->
+  <rect x="72" y="66" width="36" height="36" rx="8" fill="#171717"/>
+  <text x="90" y="90" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="600" fill="#FAFAFA">AA</text>
+
+  <!-- Brand -->
+  <text x="120" y="80" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="500" fill="#171717">Aurora Analytics</text>
+  <text x="120" y="98" font-family="Inter, Arial, sans-serif" font-size="12" fill="#737373">Workspace preview</text>
+
+  <!-- Live badge -->
+  <rect x="812" y="72" width="52" height="24" rx="12" fill="#F5F5F5"/>
+  <text x="838" y="88" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="500" fill="#171717">Live</text>
+
+  <!-- Kicker badge -->
+  <rect x="72" y="148" width="118" height="24" rx="12" fill="#FFFFFF" stroke="#E5E5E5"/>
+  <text x="131" y="164" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="12" fill="#171717">Company Name</text>
+
+  <!-- Hero title (dummy) -->
+  <text x="72" y="212" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="600" fill="#171717">Product headline here</text>
+
+  <!-- Subtitle (dummy / lorem) -->
+  <text x="72" y="248" font-family="Inter, Arial, sans-serif" font-size="14" fill="#737373">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</text>
+  <text x="72" y="268" font-family="Inter, Arial, sans-serif" font-size="14" fill="#737373">Placeholder copy fills this design.</text>
+
+  <!-- Primary CTA -->
+  <rect x="72" y="292" width="112" height="32" rx="8" fill="#171717"/>
+  <text x="128" y="313" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="500" fill="#FAFAFA">Primary CTA</text>
+
+  <!-- Secondary CTA -->
+  <rect x="196" y="292" width="96" height="32" rx="8" fill="#FFFFFF" stroke="#E5E5E5"/>
+  <text x="244" y="313" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="500" fill="#171717">Secondary</text>
+
+  <!-- Metric cards (right column) -->
+  <rect x="560" y="148" width="304" height="72" rx="12" fill="#FAFAFA"/>
+  <text x="580" y="172" font-family="Inter, Arial, sans-serif" font-size="12" fill="#737373">Metric label</text>
+  <text x="580" y="198" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="600" fill="#171717">$99.99</text>
+  <text x="680" y="198" font-family="Inter, Arial, sans-serif" font-size="12" fill="#737373">+00.0% vs Q2</text>
+
+  <rect x="560" y="232" width="304" height="72" rx="12" fill="#FAFAFA"/>
+  <text x="580" y="256" font-family="Inter, Arial, sans-serif" font-size="12" fill="#737373">Card title</text>
+  <text x="580" y="282" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="600" fill="#171717">1,234</text>
+  <text x="680" y="282" font-family="Inter, Arial, sans-serif" font-size="12" fill="#737373">Sample data here</text>
+
+  <rect x="560" y="316" width="304" height="72" rx="12" fill="#FAFAFA"/>
+  <text x="580" y="340" font-family="Inter, Arial, sans-serif" font-size="12" fill="#737373">NPS</text>
+  <text x="580" y="366" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="600" fill="#171717">00</text>
+  <text x="680" y="366" font-family="Inter, Arial, sans-serif" font-size="12" fill="#737373">Subtitle goes here</text>
+
+  <!-- Divider -->
+  <line x1="72" y1="420" x2="888" y2="420" stroke="#E5E5E5"/>
+
+  <!-- Team activity -->
+  <text x="72" y="452" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="500" fill="#171717">Team activity</text>
+
+  <!-- Person 1 -->
+  <rect x="72" y="468" width="816" height="52" rx="12" fill="#FAFAFA"/>
+  <circle cx="100" cy="494" r="16" fill="#F5F5F5"/>
+  <text x="100" y="498" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="10" font-weight="500" fill="#171717">JO</text>
+  <text x="128" y="490" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="500" fill="#171717">John Doe</text>
+  <text x="128" y="508" font-family="Inter, Arial, sans-serif" font-size="12" fill="#737373">User name</text>
+  <text x="820" y="498" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#737373">Coming soon</text>
+
+  <!-- Person 2 -->
+  <rect x="72" y="532" width="816" height="52" rx="12" fill="#FAFAFA"/>
+  <circle cx="100" cy="558" r="16" fill="#F5F5F5"/>
+  <text x="100" y="562" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="10" font-weight="500" fill="#171717">JA</text>
+  <text x="128" y="554" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="500" fill="#171717">Jane Smith</text>
+  <text x="128" y="572" font-family="Inter, Arial, sans-serif" font-size="12" fill="#737373">Job title</text>
+  <text x="820" y="562" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#737373">dummy@example.com</text>
+
+  <!-- Person 3 -->
+  <rect x="72" y="596" width="816" height="52" rx="12" fill="#FAFAFA"/>
+  <circle cx="100" cy="622" r="16" fill="#F5F5F5"/>
+  <text x="100" y="626" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="10" font-weight="500" fill="#171717">AL</text>
+  <text x="128" y="618" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="500" fill="#171717">Alex Smith</text>
+  <text x="128" y="636" font-family="Inter, Arial, sans-serif" font-size="12" fill="#737373">Role name</text>
+  <text x="820" y="626" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="12" fill="#737373">Lorem ipsum</text>
+</svg>
