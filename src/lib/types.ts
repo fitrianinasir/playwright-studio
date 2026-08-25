@@ -19,6 +19,8 @@ export type CompareRequest = {
   webpageUrl: string;
   targetId: string;
   figmaUrl: string;
+  /** Extra ms after animations settle (helps GSAP/canvas intros). */
+  settleMs?: number;
 };
 
 export type CompareResponse = {

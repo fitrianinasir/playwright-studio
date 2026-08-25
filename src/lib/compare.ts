@@ -35,7 +35,9 @@ export async function runVisualCompare(
   const token = process.env.FIGMA_ACCESS_TOKEN?.trim();
 
   const liveCapture = await withBrowser((page) =>
-    captureSelector(page, webpageUrl, selector),
+    captureSelector(page, webpageUrl, selector, {
+      settleMs: input.settleMs,
+    }),
   );
 
   let designBuffer: Buffer;
@@ -56,7 +58,9 @@ export async function runVisualCompare(
     source = "figma-api";
   } else {
     const designCapture = await withBrowser((page) =>
-      captureSelector(page, figmaUrl, selector),
+      captureSelector(page, figmaUrl, selector, {
+        settleMs: input.settleMs,
+      }),
     );
     designBuffer = designCapture.buffer;
     designBoxes = designCapture.boxes;

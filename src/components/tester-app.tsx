@@ -50,6 +50,7 @@ export function TesterApp() {
   const [webpageUrl, setWebpageUrl] = useState("");
   const [targetId, setTargetId] = useState(DEFAULT_TARGET);
   const [figmaUrl, setFigmaUrl] = useState("");
+  const [settleMs, setSettleMs] = useState("10000");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CompareResponse | null>(null);
@@ -74,7 +75,12 @@ export function TesterApp() {
       const response = await fetch("/api/compare", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ webpageUrl, targetId, figmaUrl }),
+        body: JSON.stringify({
+          webpageUrl,
+          targetId,
+          figmaUrl,
+          settleMs: Number(settleMs) || 0,
+        }),
       });
       const payload = (await response.json()) as CompareResponse & {
         error?: string;
@@ -160,11 +166,27 @@ export function TesterApp() {
                   onChange={(event) => setFigmaUrl(event.target.value)}
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="settleMs">Extra settle after animations (ms)</Label>
+                <Input
+                  id="settleMs"
+                  type="number"
+                  min={0}
+                  max={30000}
+                  step={500}
+                  placeholder="10000"
+                  value={settleMs}
+                  onChange={(event) => setSettleMs(event.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Capture always waits for CSS/Web Animations to finish. Use this
+                  extra delay for GSAP/canvas animations.
+                </p>
+              </div>
               <Button
                 type="button"
                 variant="secondary"
                 onClick={fillDemo}
-                disabled={!demoReady}
               >
                 <FlaskConical data-icon="inline-start" />
                 Use local demo

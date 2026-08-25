@@ -18,11 +18,12 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Loader2, Play, Plus, Trash2 } from "lucide-react";
+import { Eraser, GripVertical, Loader2, Play, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ACTION_CATALOG, catalogItem, defaultStep } from "@/lib/action-catalog";
 import type {
   ActionKind,
+  Baseline,
   BrowserName,
   DevicePreset,
   Scenario,
@@ -125,6 +126,8 @@ export function ScenarioComposer({
   const [selectedId, setSelectedId] = useState(scenario.steps[0]?.id ?? "");
   const [saving, setSaving] = useState(false);
   const [running, setRunning] = useState(false);
+  const [clearingBaselines, setClearingBaselines] = useState(false);
+  const [baselines, setBaselines] = useState<Baseline[]>([]);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const selected = draft.steps.find((step) => step.id === selectedId) ?? null;
 
@@ -133,10 +136,49 @@ export function ScenarioComposer({
     setSelectedId(scenario.steps[0]?.id ?? "");
   }, [scenario]);
 
+  async function parseJson(response: Response) {
+    const text = await response.text();
+    if (!text) return {} as { error?: string; cleared?: number; baselines?: Baseline[] };
+    try {
+      return JSON.parse(text) as {
+        error?: string;
+        cleared?: number;
+        baselines?: Baseline[];
+      };
+    } catch {
+      throw new Error("Invalid response from server.");
+    }
+  }
+
+  async function refreshBaselines() {
+    try {
+      const response = await fetch(`/api/scenarios/${draft.id}/baselines`);
+      const payload = await parseJson(response);
+      if (response.ok) setBaselines(payload.baselines ?? []);
+    } catch {
+      // Ignore — viewer just shows empty.
+    }
+  }
+
+  useEffect(() => {
+    void refreshBaselines();
+  }, [draft.id]);
+
   const selectedFields = useMemo(
     () => (selected ? catalogItem(selected.kind).fields : []),
     [selected],
   );
+
+  const screenshotBaselines = useMemo(() => {
+    if (!selected || selected.kind !== "screenshot") return [];
+    const snapshotName = selected.params.name?.trim() ?? "";
+    if (!snapshotName) return [];
+    return baselines.filter(
+      (baseline) =>
+        baseline.snapshotName === snapshotName &&
+        draft.browsers.includes(baseline.browser),
+    );
+  }, [selected, baselines, draft.browsers]);
 
   function addKind(kind: ActionKind) {
     const step = defaultStep(kind);
@@ -212,6 +254,45 @@ export function ScenarioComposer({
       toast.error(error instanceof Error ? error.message : "Save failed");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function clearBaselines() {
+    setClearingBaselines(true);
+    try {
+      const response = await fetch(`/api/scenarios/${draft.id}/baselines`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "clear-all" }),
+      });
+      const payload = await parseJson(response);
+      if (!response.ok) throw new Error(payload.error || "Could not clear baselines");
+      toast.success(
+        payload.cleared
+          ? `Cleared ${payload.cleared} baseline${payload.cleared === 1 ? "" : "s"}`
+          : "No baselines to clear",
+      );
+      setBaselines([]);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not clear baselines");
+    } finally {
+      setClearingBaselines(false);
+    }
+  }
+
+  async function clearOneBaseline(baselineId: string) {
+    try {
+      const response = await fetch(`/api/scenarios/${draft.id}/baselines`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete-one", baselineId }),
+      });
+      const payload = await parseJson(response);
+      if (!response.ok) throw new Error(payload.error || "Could not clear baseline");
+      setBaselines((current) => current.filter((baseline) => baseline.id !== baselineId));
+      toast.success("Baseline cleared");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not clear baseline");
     }
   }
 
@@ -371,6 +452,18 @@ export function ScenarioComposer({
                   )}
                   Run on selected browsers
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={clearBaselines}
+                  disabled={clearingBaselines || running}
+                >
+                  {clearingBaselines ? (
+                    <Loader2 className="animate-spin" data-icon="inline-start" />
+                  ) : (
+                    <Eraser data-icon="inline-start" />
+                  )}
+                  Clear baselines
+                </Button>
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">View-only role — sharing still lets you inspect the chain.</p>
@@ -422,6 +515,68 @@ export function ScenarioComposer({
                     )}
                   </div>
                 ))}
+                {selected.kind === "screenshot" ? (
+                  <div className="space-y-2 border-t pt-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label>Existing baselines</Label>
+                      <Button
+                        type="button"
+                        size="xs"
+                        variant="ghost"
+                        onClick={() => void refreshBaselines()}
+                      >
+                        Refresh
+                      </Button>
+                    </div>
+                    {!selected.params.name?.trim() ? (
+                      <p className="text-xs text-muted-foreground">
+                        Set a snapshot name to match stored baselines.
+                      </p>
+                    ) : screenshotBaselines.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        No baseline yet for “{selected.params.name.trim()}”. The
+                        next run will create one.
+                      </p>
+                    ) : (
+                      <ScrollArea className="h-64">
+                        <div className="flex flex-col gap-3 pr-2">
+                          {screenshotBaselines.map((baseline) => (
+                            <figure
+                              key={baseline.id}
+                              className="space-y-1.5 rounded-lg border p-2"
+                            >
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <Badge variant="outline">{baseline.browser}</Badge>
+                                <Badge variant="secondary">{baseline.device}</Badge>
+                              </div>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={baseline.image}
+                                alt={`${baseline.snapshotName} baseline`}
+                                className="w-full rounded-md ring-1 ring-foreground/10"
+                              />
+                              <figcaption className="text-[11px] text-muted-foreground">
+                                Updated {new Date(baseline.updatedAt).toLocaleString()}
+                              </figcaption>
+                              {canEdit ? (
+                                <Button
+                                  type="button"
+                                  size="xs"
+                                  variant="outline"
+                                  className="w-full"
+                                  onClick={() => void clearOneBaseline(baseline.id)}
+                                >
+                                  <Eraser data-icon="inline-start" />
+                                  Clear baseline
+                                </Button>
+                              ) : null}
+                            </figure>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    )}
+                  </div>
+                ) : null}
                 {canEdit ? (
                   <Button variant="destructive" onClick={removeSelected}>
                     <Trash2 data-icon="inline-start" />

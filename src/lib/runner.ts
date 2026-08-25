@@ -176,6 +176,7 @@ async function runStep(
         webpageUrl,
         targetId: required(step, "targetId"),
         figmaUrl,
+        settleMs: Number(step.params.settleMs) || 0,
       });
       const failed = result.accuracyWhitelisted < 90;
       return {

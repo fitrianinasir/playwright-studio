@@ -90,6 +90,7 @@ export const ACTION_CATALOG: ActionCatalogItem[] = [
       { key: "webpageUrl", label: "Webpage URL (blank = current page)", placeholder: "/demo/webpage" },
       { key: "targetId", label: "Target ID", placeholder: "compare-target" },
       { key: "figmaUrl", label: "Figma / design URL", placeholder: "/demo/figma" },
+      { key: "settleMs", label: "Wait after load (ms)", placeholder: "3000" },
     ],
   },
 ];

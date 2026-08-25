@@ -46,6 +46,8 @@ type StudioActions = {
   saveBaseline: (
     input: Omit<Baseline, "id" | "updatedAt"> & { id?: string },
   ) => Baseline;
+  clearBaselinesForScenario: (scenarioId: string) => number;
+  deleteBaseline: (baselineId: string) => boolean;
 };
 
 export type StudioStore = StudioState & StudioActions;
@@ -265,6 +267,25 @@ function createStudioStore() {
       set((state) => ({ baselines: [...state.baselines, baseline] }));
       return baseline;
     },
+
+    clearBaselinesForScenario(scenarioId) {
+      const before = get().baselines.length;
+      set((state) => ({
+        baselines: state.baselines.filter(
+          (baseline) => baseline.scenarioId !== scenarioId,
+        ),
+      }));
+      return before - get().baselines.length;
+    },
+
+    deleteBaseline(baselineId) {
+      const exists = get().baselines.some((baseline) => baseline.id === baselineId);
+      if (!exists) return false;
+      set((state) => ({
+        baselines: state.baselines.filter((baseline) => baseline.id !== baselineId),
+      }));
+      return true;
+    },
   }));
 }
 
@@ -340,4 +361,12 @@ export function saveBaseline(
   input: Parameters<StudioActions["saveBaseline"]>[0],
 ) {
   return studioStore.getState().saveBaseline(input);
+}
+
+export function clearBaselinesForScenario(scenarioId: string) {
+  return studioStore.getState().clearBaselinesForScenario(scenarioId);
+}
+
+export function deleteBaseline(baselineId: string) {
+  return studioStore.getState().deleteBaseline(baselineId);
 }

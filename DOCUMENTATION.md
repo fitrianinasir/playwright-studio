@@ -90,15 +90,69 @@ Inputs:
 2. **Targeted ID / selector** — section to screenshot (`compare-target` or `#compare-target`).
 3. **Figma URL section** — either a `figma.com` file/node link **or** any http(s) page that renders the design (demo: `/demo/figma`).
 
-Pipeline:
+### TesterApp → `/api/compare` chain
 
-1. Playwright screenshots the target on the live page and collects text bounding boxes.
-2. Design source:
-   - **Figma API** if the URL is a Figma file and `FIGMA_ACCESS_TOKEN` is set (exports the node image + text boxes).
-   - Otherwise a second Playwright capture of that URL with the same selector (**design page**).
-3. Live image is resized to the design size.
-4. **Dummy-text whitelist**: design text that looks like placeholder copy (lorem, John Doe, example.com, etc.), or live text that does not match the spatially aligned design text, is masked on **both** images.
-5. pixelmatch produces a raw diff and a whitelisted diff. The score you care about is **after dummy whitelist** — layout/spacing can still approach 100% even when Figma used fake copy and production has real data.
+The **Figma visual** screen (`TesterApp` in `src/components/tester-app.tsx`) only talks to one API: `POST /api/compare`. Everything else is server-side function chaining inside `runVisualCompare`.
+
+```
+TesterApp (form)
+    │  POST { webpageUrl, targetId, figmaUrl }
+    ▼
+/api/compare  →  runVisualCompare()
+    │
+    ├─ assertHttpUrl          validate both URLs
+    ├─ cssTargetSelector      turn id into CSS selector (#…)
+    ├─ parseFigmaUrl          detect real Figma link vs design page
+    │
+    ├─ withBrowser + captureSelector   screenshot LIVE page + text boxes
+    │
+    ├─ design source (branch)
+    │     ├─ fetchFigmaSection   Figma API image + text nodes (needs token)
+    │     └─ withBrowser + captureSelector   or screenshot design PAGE
+    │
+    ├─ pngFromBuffer          decode PNGs
+    ├─ resizePng              fit live image to design size
+    ├─ buildWhitelist         find dummy / mismatched text regions
+    ├─ uniqueWhitelist        de-dupe whitelist rows for the UI table
+    ├─ applyTextMasks         paint over those regions on both images
+    ├─ diffPngs (×2)          raw diff + whitelisted diff (pixelmatch)
+    └─ accuracyFromDiff / pngToDataUrl   scores + data-URL images → JSON
+```
+
+| Step | Where | Short role |
+| --- | --- | --- |
+| Form submit | `tester-app.tsx` | Collects the three fields; `fetch("/api/compare")`; stores the JSON result in React state (not Zustand). |
+| `POST` handler | `api/compare/route.ts` | Validates required fields, calls `runVisualCompare`, returns JSON or error. |
+| `runVisualCompare` | `compare.ts` | Orchestrator for the whole pipeline. |
+| `assertHttpUrl` | `compare.ts` | Ensures webpage/figma values are valid `http(s)` URLs. |
+| `cssTargetSelector` | `capture.ts` | Normalizes `compare-target` → `#compare-target` (or leaves a full selector alone). |
+| `parseFigmaUrl` | `figma.ts` | If host is figma.com, extracts `fileKey` + `node-id`; otherwise `null` → design-page path. |
+| `withBrowser` | `capture.ts` | Launches Chromium (falls back to Chrome/Edge), opens a page, closes the browser after. |
+| `captureSelector` | `capture.ts` | `goto` URL, wait for selector, screenshot that node, collect text bounding boxes. |
+| `fetchFigmaSection` | `figma.ts` | Calls Figma Images + Nodes APIs; returns PNG buffer, size, and text boxes. |
+| `pngFromBuffer` | `image-compare.ts` | Parses PNG bytes into a pixel buffer. |
+| `resizePng` | `image-compare.ts` | Scales the live capture to the design width/height when they differ. |
+| `buildWhitelist` | `dummy-text.ts` | Marks regions that look like dummy copy or don’t match live text at the same spot. |
+| `uniqueWhitelist` | `dummy-text.ts` | Removes duplicate whitelist rows for the results table. |
+| `applyTextMasks` | `image-compare.ts` | Fills whitelist boxes with a flat mask color on both images. |
+| `diffPngs` | `image-compare.ts` | pixelmatch → mismatch count + red-highlight diff image. |
+| `accuracyFromDiff` | `image-compare.ts` | Turns mismatches into a 0–100% score. |
+| `pngToDataUrl` | `image-compare.ts` | Encodes PNGs as `data:image/png;base64,…` for the UI. |
+
+UI then shows scores, whitelist table, and raw / whitelisted / source image tabs. Refreshing the page clears this result (session-only React state).
+
+### Waiting for intro animations
+
+Before every screenshot, `captureSelector` **always** waits until animations are fully settled:
+
+1. Prefers `networkidle` (falls back to `load` if the site never goes idle).
+2. Waits until the target selector is visible.
+3. Waits for fonts, then **awaits every finite CSS/Web Animation** (`getAnimations({ subtree: true })`) and requires a **500ms quiet window** with no new running finite animations (infinite loops like spinners are ignored).
+4. Waits for `<img>` elements to finish loading.
+5. Optional **extra settle ms** (Figma visual form; default `3000`) for GSAP/canvas intros that don’t use the Web Animations API.
+6. Screenshots with `animations: "disabled"` so leftover CSS transitions don’t blur the shot.
+
+For [Ocean BCA](https://ocean.bca.co.id/id), keep **Extra settle after animations** at `3000`–`5000`.
 
 Ad-hoc runs on **Figma visual** are only shown on that screen. To keep history, put the same compare in a scenario and run it from the composer.
 

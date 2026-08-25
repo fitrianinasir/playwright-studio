@@ -10,6 +10,10 @@ export async function POST(request: Request) {
     const webpageUrl = body.webpageUrl?.trim() ?? "";
     const targetId = body.targetId?.trim() ?? "";
     const figmaUrl = body.figmaUrl?.trim() ?? "";
+    const settleMs =
+      typeof body.settleMs === "number" && Number.isFinite(body.settleMs)
+        ? body.settleMs
+        : undefined;
 
     if (!webpageUrl || !targetId || !figmaUrl) {
       return Response.json(
@@ -18,7 +22,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await runVisualCompare({ webpageUrl, targetId, figmaUrl });
+    const result = await runVisualCompare({
+      webpageUrl,
+      targetId,
+      figmaUrl,
+      settleMs,
+    });
     return Response.json(result);
   } catch (error) {
     const message =
