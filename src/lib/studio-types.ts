@@ -1,5 +1,26 @@
 export type BrowserName = "chromium" | "firefox" | "webkit";
-export type DevicePreset = "desktop" | "iphone-14" | "pixel-7";
+
+export const DEVICE_PRESETS = [
+  { id: "1920x900", width: 1920, height: 900, label: "1920 × 900" },
+  { id: "1440x900", width: 1440, height: 900, label: "1440 × 900" },
+  { id: "1048x900", width: 1048, height: 900, label: "1048 × 900" },
+  { id: "848x900", width: 848, height: 900, label: "848 × 900" },
+  { id: "748x900", width: 748, height: 900, label: "748 × 900" },
+  { id: "576x900", width: 576, height: 900, label: "576 × 900" },
+  { id: "360x900", width: 360, height: 900, label: "360 × 900" },
+] as const;
+
+export type DevicePreset = (typeof DEVICE_PRESETS)[number]["id"];
+
+export function isDevicePreset(value: string): value is DevicePreset {
+  return DEVICE_PRESETS.some((preset) => preset.id === value);
+}
+
+export function normalizeDevice(value: string | undefined): DevicePreset {
+  if (value && isDevicePreset(value)) return value;
+  if (value === "iphone-14" || value === "pixel-7") return "360x900";
+  return "1920x900";
+}
 export type ActionKind =
   | "navigate"
   | "login"

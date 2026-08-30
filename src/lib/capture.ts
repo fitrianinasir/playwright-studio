@@ -1,12 +1,6 @@
-import {
-  chromium,
-  firefox,
-  webkit,
-  devices,
-  type Browser,
-  type Page,
-} from "playwright";
-import type { BrowserName, DevicePreset } from "@/lib/studio-types";
+import type { Browser, Page } from "playwright";
+import { chromium, firefox, webkit } from "playwright";
+import { DEVICE_PRESETS, normalizeDevice, type BrowserName, type DevicePreset } from "@/lib/studio-types";
 import type { TextBox } from "@/lib/types";
 
 export function cssTargetSelector(targetId: string) {
@@ -86,10 +80,11 @@ export async function launchNamedBrowser(name: BrowserName): Promise<Browser> {
 }
 
 export function deviceContextOptions(device: DevicePreset) {
-  if (device === "iphone-14") return devices["iPhone 14"];
-  if (device === "pixel-7") return devices["Pixel 7"];
+  const id = normalizeDevice(device);
+  const preset =
+    DEVICE_PRESETS.find((item) => item.id === id) ?? DEVICE_PRESETS[0];
   return {
-    viewport: { width: 1280, height: 900 },
+    viewport: { width: preset.width, height: preset.height },
     deviceScaleFactor: 1,
   };
 }
@@ -101,7 +96,7 @@ export async function withBrowser<T>(
   const browser = await launchNamedBrowser(options?.browser ?? "chromium");
   try {
     const context = await browser.newContext(
-      deviceContextOptions(options?.device ?? "desktop"),
+      deviceContextOptions(options?.device ?? "1920x900"),
     );
     const page = await context.newPage();
     return await run(page);

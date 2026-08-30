@@ -1,5 +1,6 @@
 import { createStore } from "zustand/vanilla";
 import { PROJECT_ID } from "@/lib/project";
+import { normalizeDevice } from "@/lib/studio-types";
 import type {
   Baseline,
   BrowserName,
@@ -131,7 +132,7 @@ function createSeed(): StudioState {
         description: "Chain login, assert, and a visual regression screenshot. Set the Navigate URL to your live login page.",
         steps: seedStepsLogin(),
         browsers: ["chromium"],
-        device: "desktop",
+        device: "1920x900",
         updatedAt: nowIso(),
       },
       {
@@ -141,7 +142,7 @@ function createSeed(): StudioState {
         description: "Visual compare a live page section against a Figma or design URL.",
         steps: seedStepsVisual(),
         browsers: ["chromium"],
-        device: "desktop",
+        device: "1920x900",
         updatedAt: nowIso(),
       },
     ],
@@ -174,7 +175,7 @@ function createStudioStore() {
         description: input.description,
         steps: input.steps ?? [],
         browsers: input.browsers ?? ["chromium"],
-        device: input.device ?? "desktop",
+        device: input.device ?? "1920x900",
         updatedAt: nowIso(),
       };
       set((state) => ({ scenarios: [...state.scenarios, scenario] }));
@@ -319,14 +320,34 @@ const globalForStore = globalThis as typeof globalThis & {
 
 function snapshotState(store: StudioZustandStore): StudioState {
   const state = store.getState();
-  return stripDemoUrls(
-    migrateLoginSteps({
-      projects: state.projects,
-      scenarios: state.scenarios,
-      runs: state.runs,
-      baselines: state.baselines,
-    }),
+  return migrateDevices(
+    stripDemoUrls(
+      migrateLoginSteps({
+        projects: state.projects,
+        scenarios: state.scenarios,
+        runs: state.runs,
+        baselines: state.baselines,
+      }),
+    ),
   );
+}
+
+function migrateDevices(state: StudioState): StudioState {
+  return {
+    ...state,
+    scenarios: state.scenarios.map((scenario) => ({
+      ...scenario,
+      device: normalizeDevice(scenario.device),
+    })),
+    runs: state.runs.map((run) => ({
+      ...run,
+      device: normalizeDevice(run.device),
+    })),
+    baselines: state.baselines.map((baseline) => ({
+      ...baseline,
+      device: normalizeDevice(baseline.device),
+    })),
+  };
 }
 
 function stripDemoUrls(state: StudioState): StudioState {

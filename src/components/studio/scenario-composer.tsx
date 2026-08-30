@@ -22,11 +22,11 @@ import { CSS } from "@dnd-kit/utilities";
 import { CheckCircle2, CircleMinus, Eraser, GripVertical, Loader2, Play, Plus, Trash2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { PALETTE_ACTIONS, catalogItem, defaultStep } from "@/lib/action-catalog";
+import { DEVICE_PRESETS, normalizeDevice, type DevicePreset } from "@/lib/studio-types";
 import type {
   ActionKind,
   Baseline,
   BrowserName,
-  DevicePreset,
   Scenario,
   ScenarioStep,
   StepStatus,
@@ -452,7 +452,7 @@ export function ScenarioComposer({
               <div className="space-y-2">
                 <Label>Device</Label>
                 <Select
-                  value={draft.device}
+                  value={normalizeDevice(draft.device)}
                   disabled={!canEdit}
                   onValueChange={(value) =>
                     setDraft({ ...draft, device: value as DevicePreset })
@@ -462,9 +462,11 @@ export function ScenarioComposer({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="desktop">Desktop 1280×900</SelectItem>
-                    <SelectItem value="iphone-14">iPhone 14</SelectItem>
-                    <SelectItem value="pixel-7">Pixel 7</SelectItem>
+                    {DEVICE_PRESETS.map((preset) => (
+                      <SelectItem key={preset.id} value={preset.id}>
+                        {preset.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
