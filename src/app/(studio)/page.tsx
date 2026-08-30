@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PROJECT_ID } from "@/lib/project";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ export default function HomePage() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/projects/${PROJECT_ID}/scenarios`)
@@ -51,6 +52,31 @@ export default function HomePage() {
       return;
     }
     router.push(`/builder/${payload.scenario.id}`);
+  }
+
+  async function remove(scenario: Scenario) {
+    if (
+      !window.confirm(
+        `Delete “${scenario.name}”? This also removes its screenshot baselines.`,
+      )
+    ) {
+      return;
+    }
+    setDeletingId(scenario.id);
+    try {
+      const response = await fetch(`/api/scenarios/${scenario.id}`, {
+        method: "DELETE",
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        toast.error(payload.error || "Could not delete scenario");
+        return;
+      }
+      setScenarios((current) => current.filter((item) => item.id !== scenario.id));
+      toast.success("Scenario deleted");
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   return (
@@ -102,9 +128,21 @@ export default function HomePage() {
               <span>{scenario.steps.length} steps</span>
               <span>· {scenario.browsers.join(", ")}</span>
               <span>· {scenario.device}</span>
-              <Button className="ml-auto" asChild>
-                <Link href={`/builder/${scenario.id}`}>Edit in composer</Link>
-              </Button>
+              <div className="ml-auto flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={deletingId === scenario.id}
+                  onClick={() => void remove(scenario)}
+                >
+                  <Trash2 data-icon="inline-start" />
+                  {deletingId === scenario.id ? "Deleting…" : "Delete"}
+                </Button>
+                <Button asChild>
+                  <Link href={`/builder/${scenario.id}`}>Edit in composer</Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}

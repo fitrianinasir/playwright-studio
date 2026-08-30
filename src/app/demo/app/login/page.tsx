@@ -11,17 +11,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 export default function DemoLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [corporateId, setCorporateId] = useState("");
+  const [userId, setUserId] = useState("");
+  const [keybca, setKeybca] = useState("");
   const [error, setError] = useState("");
 
   function onSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (email === "designer@acme.test" && password === "password123") {
+    if (corporateId === "ACME01" && userId === "designer" && keybca === "123456") {
       router.push("/demo/app/home");
       return;
     }
@@ -34,26 +34,39 @@ export default function DemoLoginPage() {
         <CardHeader>
           <CardTitle>Acme workspace</CardTitle>
           <CardDescription>
-            Dummy app under test. Use designer@acme.test / password123
+            Dummy app under test. Inputs have no id — Playwright can use name
+            selectors such as [name=&quot;Corporate_id&quot;]. Demo values: ACME01 /
+            designer / 123456
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form className="flex flex-col gap-4" onSubmit={onSubmit}>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-medium">Corporate_id</span>
               <Input
-                id="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                name="Corporate_id"
+                autoComplete="off"
+                value={corporateId}
+                onChange={(event) => setCorporateId(event.target.value)}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-medium">user_id</span>
               <Input
-                id="password"
+                name="user_id"
+                autoComplete="username"
+                value={userId}
+                onChange={(event) => setUserId(event.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-medium">keybca</span>
+              <Input
+                name="keybca"
                 type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                autoComplete="off"
+                value={keybca}
+                onChange={(event) => setKeybca(event.target.value)}
               />
             </div>
             {error ? <p className="text-sm text-destructive">{error}</p> : null}

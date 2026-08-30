@@ -48,6 +48,10 @@ type StudioActions = {
   ) => Baseline;
   clearBaselinesForScenario: (scenarioId: string) => number;
   deleteBaseline: (baselineId: string) => boolean;
+  clearRegressionHistory: (projectId: string) => {
+    clearedRuns: number;
+    clearedBaselines: number;
+  };
 };
 
 export type StudioStore = StudioState & StudioActions;
@@ -67,13 +71,15 @@ function seedStepsLogin(): ScenarioStep[] {
     {
       id: "step_login",
       kind: "login",
-      name: "Sign in as designer",
+      name: "Sign in with corporate credentials",
       params: {
-        emailSelector: "#email",
-        passwordSelector: "#password",
+        corporateIdSelector: '[name="Corporate_id"]',
+        userIdSelector: '[name="user_id"]',
+        keybcaSelector: '[name="keybca"]',
         submitSelector: "button[type=submit]",
-        email: "designer@acme.test",
-        password: "password123",
+        corporateId: "ACME01",
+        userId: "designer",
+        keybca: "123456",
       },
     },
     {
@@ -196,6 +202,7 @@ function createStudioStore() {
     deleteScenario(id) {
       set((state) => ({
         scenarios: state.scenarios.filter((scenario) => scenario.id !== id),
+        baselines: state.baselines.filter((baseline) => baseline.scenarioId !== id),
       }));
     },
 
@@ -286,6 +293,21 @@ function createStudioStore() {
       }));
       return true;
     },
+
+    clearRegressionHistory(projectId) {
+      const state = get();
+      const clearedRuns = state.runs.filter((run) => run.projectId === projectId).length;
+      const clearedBaselines = state.baselines.filter(
+        (baseline) => baseline.projectId === projectId,
+      ).length;
+      set({
+        runs: state.runs.filter((run) => run.projectId !== projectId),
+        baselines: state.baselines.filter(
+          (baseline) => baseline.projectId !== projectId,
+        ),
+      });
+      return { clearedRuns, clearedBaselines };
+    },
   }));
 }
 
@@ -295,10 +317,57 @@ const globalForStore = globalThis as typeof globalThis & {
   __vtaZustandStore?: StudioZustandStore;
 };
 
+function snapshotState(store: StudioZustandStore): StudioState {
+  const state = store.getState();
+  return migrateLoginSteps({
+    projects: state.projects,
+    scenarios: state.scenarios,
+    runs: state.runs,
+    baselines: state.baselines,
+  });
+}
+
+function migrateLoginSteps(state: StudioState): StudioState {
+  return {
+    ...state,
+    scenarios: state.scenarios.map((scenario) => ({
+      ...scenario,
+      steps: scenario.steps.map((step) => {
+        if (step.kind !== "login") return step;
+        if (!("emailSelector" in step.params) && step.params.corporateIdSelector) {
+          return step;
+        }
+        return {
+          ...step,
+          name:
+            step.name === "Sign in as designer"
+              ? "Sign in with corporate credentials"
+              : step.name,
+          params: {
+            corporateIdSelector: '[name="Corporate_id"]',
+            userIdSelector: '[name="user_id"]',
+            keybcaSelector: '[name="keybca"]',
+            submitSelector: step.params.submitSelector || "button[type=submit]",
+            corporateId: "ACME01",
+            userId: "designer",
+            keybca: "123456",
+          },
+        };
+      }),
+    })),
+  };
+}
+
 function getOrCreateStudioStore() {
-  if (!globalForStore.__vtaZustandStore) {
-    globalForStore.__vtaZustandStore = createStudioStore();
+  const existing = globalForStore.__vtaZustandStore;
+  // Always rebuild on module load so HMR picks up new actions, but keep data.
+  if (existing) {
+    const next = createStudioStore();
+    next.setState(snapshotState(existing));
+    globalForStore.__vtaZustandStore = next;
+    return next;
   }
+  globalForStore.__vtaZustandStore = createStudioStore();
   return globalForStore.__vtaZustandStore;
 }
 
@@ -369,4 +438,8 @@ export function clearBaselinesForScenario(scenarioId: string) {
 
 export function deleteBaseline(baselineId: string) {
   return studioStore.getState().deleteBaseline(baselineId);
+}
+
+export function clearRegressionHistory(projectId: string) {
+  return studioStore.getState().clearRegressionHistory(projectId);
 }

@@ -101,11 +101,21 @@ async function runStep(
       return { stepId: step.id, name: step.name, kind: step.kind, status: "passed", log: `Opened ${url}` };
     }
     case "login": {
-      await page.locator(required(step, "emailSelector")).fill(required(step, "email"));
-      await page.locator(required(step, "passwordSelector")).fill(required(step, "password"));
+      const corporateIdSelector = required(step, "corporateIdSelector");
+      const userIdSelector = required(step, "userIdSelector");
+      const keybcaSelector = required(step, "keybcaSelector");
+      await page.locator(corporateIdSelector).fill(required(step, "corporateId"));
+      await page.locator(userIdSelector).fill(required(step, "userId"));
+      await page.locator(keybcaSelector).fill(required(step, "keybca"));
       await page.locator(required(step, "submitSelector")).click();
       await page.waitForLoadState("load");
-      return { stepId: step.id, name: step.name, kind: step.kind, status: "passed", log: "Submitted login form" };
+      return {
+        stepId: step.id,
+        name: step.name,
+        kind: step.kind,
+        status: "passed",
+        log: `Submitted login via ${corporateIdSelector}, ${userIdSelector}, ${keybcaSelector}`,
+      };
     }
     case "fill": {
       await page.locator(required(step, "selector")).fill(step.params.value ?? "");

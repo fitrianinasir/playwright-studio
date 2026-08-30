@@ -10,13 +10,27 @@ export const ACTION_CATALOG: ActionCatalogItem[] = [
   {
     kind: "login",
     label: "Login",
-    description: "Fill credentials and submit",
+    description: "Fill Corporate_id, user_id, and keybca, then submit",
     fields: [
-      { key: "emailSelector", label: "Email selector", placeholder: "#email" },
-      { key: "passwordSelector", label: "Password selector", placeholder: "#password" },
+      {
+        key: "corporateIdSelector",
+        label: "Corporate_id selector",
+        placeholder: '[name="Corporate_id"]',
+      },
+      { key: "corporateId", label: "Corporate_id", placeholder: "ACME01" },
+      {
+        key: "userIdSelector",
+        label: "user_id selector",
+        placeholder: '[name="user_id"]',
+      },
+      { key: "userId", label: "user_id", placeholder: "designer" },
+      {
+        key: "keybcaSelector",
+        label: "keybca selector",
+        placeholder: '[name="keybca"]',
+      },
+      { key: "keybca", label: "keybca", placeholder: "123456" },
       { key: "submitSelector", label: "Submit selector", placeholder: "button[type=submit]" },
-      { key: "email", label: "Email", placeholder: "designer@acme.test" },
-      { key: "password", label: "Password", placeholder: "password123" },
     ],
   },
   {

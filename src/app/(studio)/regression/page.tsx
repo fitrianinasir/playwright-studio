@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -22,6 +25,7 @@ type Pair = {
 export default function RegressionPage() {
   const [baselines, setBaselines] = useState<Baseline[]>([]);
   const [runs, setRuns] = useState<TestRun[]>([]);
+  const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
     fetch(`/api/projects/${PROJECT_ID}/runs`)
@@ -61,13 +65,54 @@ export default function RegressionPage() {
     });
   }, [baselines, runs]);
 
+  async function clearHistory() {
+    if (
+      !window.confirm(
+        "Clear all regression history? This removes every baseline and run report from memory.",
+      )
+    ) {
+      return;
+    }
+    setClearing(true);
+    try {
+      const response = await fetch(`/api/projects/${PROJECT_ID}/runs`, {
+        method: "DELETE",
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        toast.error(payload.error || "Could not clear regression history");
+        return;
+      }
+      setBaselines([]);
+      setRuns([]);
+      const clearedRuns = payload.clearedRuns ?? 0;
+      const clearedBaselines = payload.clearedBaselines ?? 0;
+      toast.success(
+        `Cleared ${clearedBaselines} baseline${clearedBaselines === 1 ? "" : "s"} and ${clearedRuns} run${clearedRuns === 1 ? "" : "s"}`,
+      );
+    } finally {
+      setClearing(false);
+    }
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-8">
-      <div>
-        <h2 className="text-2xl font-semibold tracking-tight">Visual regression</h2>
-        <p className="text-sm text-muted-foreground">
-          Baseline versus the latest capture. Highlighted pixels come from pixelmatch.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">Visual regression</h2>
+          <p className="text-sm text-muted-foreground">
+            Baseline versus the latest capture. Highlighted pixels come from pixelmatch.
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={clearing || (baselines.length === 0 && runs.length === 0)}
+          onClick={() => void clearHistory()}
+        >
+          <Trash2 data-icon="inline-start" />
+          {clearing ? "Clearing…" : "Clear all history"}
+        </Button>
       </div>
       {pairs.length === 0 ? (
         <Card>
