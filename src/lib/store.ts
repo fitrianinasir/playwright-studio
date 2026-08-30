@@ -77,7 +77,7 @@ function seedStepsLogin(): ScenarioStep[] {
         userIdSelector: '[name="user_id"]',
         keybcaSelector: '[name="keybca"]',
         submitSelector: "button[type=submit]",
-        sessionConfirmSelector: '[name="btnContinue"]',
+        popupWaitMs: "5000",
         corporateId: "",
         userId: "",
         keybca: "",
@@ -377,33 +377,28 @@ function migrateLoginSteps(state: StudioState): StudioState {
       ...scenario,
       steps: scenario.steps.map((step) => {
         if (step.kind !== "login") return step;
-        if (!("emailSelector" in step.params) && step.params.corporateIdSelector) {
-          if (step.params.sessionConfirmSelector) return step;
+        const params = { ...step.params };
+        if (!params.popupWaitMs?.trim()) params.popupWaitMs = "5000";
+        if ("emailSelector" in params && !params.corporateIdSelector) {
           return {
             ...step,
+            name:
+              step.name === "Sign in as designer"
+                ? "Sign in with corporate credentials"
+                : step.name,
             params: {
-              ...step.params,
-              sessionConfirmSelector: '[name="btnContinue"]',
+              corporateIdSelector: '[name="Corporate_id"]',
+              userIdSelector: '[name="user_id"]',
+              keybcaSelector: '[name="keybca"]',
+              submitSelector: params.submitSelector || "button[type=submit]",
+              popupWaitMs: "5000",
+              corporateId: params.corporateId || params.email || "",
+              userId: params.userId || "",
+              keybca: params.keybca || params.password || "",
             },
           };
         }
-        return {
-          ...step,
-          name:
-            step.name === "Sign in as designer"
-              ? "Sign in with corporate credentials"
-              : step.name,
-          params: {
-            corporateIdSelector: '[name="Corporate_id"]',
-            userIdSelector: '[name="user_id"]',
-            keybcaSelector: '[name="keybca"]',
-            submitSelector: step.params.submitSelector || "button[type=submit]",
-            sessionConfirmSelector: '[name="btnContinue"]',
-            corporateId: "ACME01",
-            userId: "designer",
-            keybca: "123456",
-          },
-        };
+        return { ...step, params };
       }),
     })),
   };

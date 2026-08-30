@@ -1,13 +1,33 @@
 import { jsonError } from "@/lib/api";
 import { getRun, getScenario, saveBaseline } from "@/lib/store";
+import type { TestRun } from "@/lib/studio-types";
 
 type Ctx = { params: Promise<{ runId: string }> };
 
-export async function GET(_request: Request, ctx: Ctx) {
+function slimRun(run: TestRun): TestRun {
+  return {
+    ...run,
+    results: run.results.map((result) => ({
+      ...result,
+      steps: result.steps.map((step) => ({
+        ...step,
+        screenshot: undefined,
+        baseline: undefined,
+        diff: undefined,
+      })),
+    })),
+  };
+}
+
+export async function GET(request: Request, ctx: Ctx) {
   const { runId } = await ctx.params;
   const run = getRun(runId);
   if (!run) return jsonError("Run not found.", 404);
-  return Response.json({ run, scenario: getScenario(run.scenarioId) });
+  const slim = new URL(request.url).searchParams.get("slim") === "1";
+  return Response.json({
+    run: slim ? slimRun(run) : run,
+    scenario: getScenario(run.scenarioId),
+  });
 }
 
 export async function POST(request: Request, ctx: Ctx) {

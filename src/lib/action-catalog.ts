@@ -10,7 +10,7 @@ export const ACTION_CATALOG: ActionCatalogItem[] = [
   {
     kind: "login",
     label: "Login",
-    description: "Fill Corporate_id, user_id, and keybca, then submit. Clicks a session-confirm popup if it appears.",
+    description: "Fill Corporate_id, user_id, and keybca, then submit. After a wait, clicks the second popup button if a session confirm appears.",
     fields: [
       {
         key: "corporateIdSelector",
@@ -32,9 +32,9 @@ export const ACTION_CATALOG: ActionCatalogItem[] = [
       { key: "keybca", label: "keybca", placeholder: "123456" },
       { key: "submitSelector", label: "Submit selector", placeholder: "button[type=submit]" },
       {
-        key: "sessionConfirmSelector",
-        label: "Session confirm selector (optional)",
-        placeholder: '[name="btnContinue"]',
+        key: "popupWaitMs",
+        label: "Wait after submit / confirm (ms)",
+        placeholder: "5000",
       },
     ],
   },
@@ -125,6 +125,9 @@ export function defaultStep(kind: ActionKind): ScenarioStep {
   if (kind === "wait") {
     params.mode = "timeout";
     params.value = "300";
+  }
+  if (kind === "login") {
+    params.popupWaitMs = "5000";
   }
   return {
     id: crypto.randomUUID(),

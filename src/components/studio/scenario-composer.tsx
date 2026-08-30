@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import {
   DndContext,
   type DragEndEvent,
@@ -18,7 +19,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Eraser, GripVertical, Loader2, Play, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, CircleMinus, Eraser, GripVertical, Loader2, Play, Plus, Trash2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ACTION_CATALOG, catalogItem, defaultStep } from "@/lib/action-catalog";
 import type {
@@ -28,6 +29,8 @@ import type {
   DevicePreset,
   Scenario,
   ScenarioStep,
+  StepStatus,
+  TestRun,
 } from "@/lib/studio-types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,6 +55,41 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 const BROWSERS: BrowserName[] = ["chromium", "firefox", "webkit"];
+
+type StepRunUiStatus = StepStatus | "pending" | "idle";
+
+function statusesFromRun(run: TestRun, stepIds: string[]): Record<string, StepRunUiStatus> {
+  const live = run.results[run.results.length - 1];
+  const done = new Map(live?.steps.map((step) => [step.stepId, step.status]) ?? []);
+  const next: Record<string, StepRunUiStatus> = {};
+  for (const id of stepIds) {
+    const status = done.get(id);
+    if (status) next[id] = status;
+    else next[id] = run.status === "running" ? "pending" : "idle";
+  }
+  return next;
+}
+
+function StepRunIcon({ status }: { status: StepRunUiStatus }) {
+  if (status === "idle") return null;
+  if (status === "passed") {
+    return <CheckCircle2 className="size-4 shrink-0 text-green-600" aria-label="Step passed" />;
+  }
+  if (status === "failed") {
+    return <XCircle className="size-4 shrink-0 text-red-600" aria-label="Step failed" />;
+  }
+  if (status === "skipped") {
+    return (
+      <CircleMinus className="size-4 shrink-0 text-muted-foreground" aria-label="Step skipped" />
+    );
+  }
+  return (
+    <Loader2
+      className="size-4 shrink-0 animate-spin text-muted-foreground"
+      aria-label={status === "pending" ? "Step waiting" : "Step running"}
+    />
+  );
+}
 
 function PaletteItem({ kind }: { kind: ActionKind }) {
   const item = catalogItem(kind);
@@ -89,10 +127,12 @@ function DropCanvas({ children }: { children: ReactNode }) {
 function SortableStep({
   step,
   selected,
+  runStatus,
   onSelect,
 }: {
   step: ScenarioStep;
   selected: boolean;
+  runStatus: StepRunUiStatus;
   onSelect: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
@@ -111,6 +151,7 @@ function SortableStep({
         <p className="truncate text-sm font-medium">{step.name}</p>
         <p className="truncate text-xs text-muted-foreground">{step.kind}</p>
       </button>
+      <StepRunIcon status={runStatus} />
     </div>
   );
 }
@@ -122,10 +163,16 @@ export function ScenarioComposer({
   scenario: Scenario;
   canEdit: boolean;
 }) {
+  const router = useRouter();
   const [draft, setDraft] = useState(scenario);
   const [selectedId, setSelectedId] = useState(scenario.steps[0]?.id ?? "");
   const [saving, setSaving] = useState(false);
   const [running, setRunning] = useState(false);
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [stepRunStatus, setStepRunStatus] = useState<Record<string, StepRunUiStatus>>({});
+  const redirectedRef = useRef(false);
+  const stepIdsRef = useRef(draft.steps.map((step) => step.id));
+  stepIdsRef.current = draft.steps.map((step) => step.id);
   const [clearingBaselines, setClearingBaselines] = useState(false);
   const [baselines, setBaselines] = useState<Baseline[]>([]);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
@@ -163,6 +210,43 @@ export function ScenarioComposer({
   useEffect(() => {
     void refreshBaselines();
   }, [draft.id]);
+
+  useEffect(() => {
+    if (!activeRunId) return;
+    let cancelled = false;
+    const runId = activeRunId;
+
+    async function poll() {
+      if (cancelled || redirectedRef.current) return;
+      try {
+        const response = await fetch(`/api/runs/${runId}?slim=1`);
+        const payload = await response.json();
+        if (!response.ok || !payload.run || cancelled || redirectedRef.current) return;
+        const run = payload.run as TestRun;
+        setStepRunStatus(statusesFromRun(run, stepIdsRef.current));
+        if (run.status !== "running") {
+          redirectedRef.current = true;
+          cancelled = true;
+          setRunning(false);
+          toast[run.status === "passed" ? "success" : "error"](`Run ${run.status}`);
+          router.replace(`/runs/${runId}`);
+          window.location.assign(`/runs/${runId}`);
+        }
+      } catch {
+        if (!cancelled && !redirectedRef.current) {
+          setRunning(false);
+          setActiveRunId(null);
+        }
+      }
+    }
+
+    void poll();
+    const timer = window.setInterval(() => void poll(), 400);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [activeRunId, router]);
 
   const selectedFields = useMemo(
     () => (selected ? catalogItem(selected.kind).fields : []),
@@ -299,6 +383,9 @@ export function ScenarioComposer({
   async function run() {
     await save();
     setRunning(true);
+    setStepRunStatus(
+      Object.fromEntries(draft.steps.map((step) => [step.id, "pending" as const])),
+    );
     try {
       const response = await fetch(`/api/scenarios/${draft.id}/run`, {
         method: "POST",
@@ -309,17 +396,13 @@ export function ScenarioComposer({
         }),
       });
       const payload = await response.json();
-      if (!response.ok && !payload.run) throw new Error(payload.error || "Run failed");
-      toast[payload.run?.status === "passed" ? "success" : "error"](
-        `Run ${payload.run?.status ?? "failed"}`,
-      );
-      if (payload.run?.id) {
-        window.location.href = `/runs/${payload.run.id}`;
-      }
+      if (!response.ok || !payload.run) throw new Error(payload.error || "Run failed");
+      redirectedRef.current = false;
+      setActiveRunId(payload.run.id as string);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Run failed");
-    } finally {
       setRunning(false);
+      setActiveRunId(null);
+      toast.error(error instanceof Error ? error.message : "Run failed");
     }
   }
 
@@ -430,6 +513,7 @@ export function ScenarioComposer({
                         <SortableStep
                           step={step}
                           selected={step.id === selectedId}
+                          runStatus={stepRunStatus[step.id] ?? "idle"}
                           onSelect={() => setSelectedId(step.id)}
                         />
                       </div>

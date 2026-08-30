@@ -43,6 +43,37 @@ async function waitForPageSettled(page: Page) {
   await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
 }
 
+function parseWaitMs(value: string | undefined, fallback = 5_000) {
+  const parsed = Number(value?.trim());
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+  return Math.min(parsed, 60_000);
+}
+
+function sleep(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+async function clickSecondPopupButton(page: Page) {
+  const roots = [
+    page.getByRole("dialog"),
+    page.getByRole("alertdialog"),
+    page.locator("[data-slot='dialog-content']"),
+  ];
+  for (const root of roots) {
+    const dialog = root.first();
+    const visible = await dialog.isVisible().catch(() => false);
+    if (!visible) continue;
+    const buttons = dialog.locator(
+      'button:visible, input[type="button"]:visible, input[type="submit"]:visible, [role="button"]:visible',
+    );
+    const count = await buttons.count();
+    if (count < 2) continue;
+    await buttons.nth(1).click();
+    return true;
+  }
+  return false;
+}
+
 async function captureStepScreenshot(page: Page, selector?: string) {
   if (selector?.trim()) {
     const loc = page.locator(selector).first();
@@ -114,21 +145,17 @@ async function runStep(
       await page.locator(userIdSelector).fill(required(step, "userId"));
       await page.locator(keybcaSelector).fill(required(step, "keybca"));
       await page.locator(required(step, "submitSelector")).click();
-      await waitForPageSettled(page);
+      const popupWaitMs = parseWaitMs(step.params.popupWaitMs);
+      await sleep(popupWaitMs);
 
-      const confirmSelector = step.params.sessionConfirmSelector?.trim();
       let confirmLog = "no session popup";
-      if (confirmSelector) {
-        const confirm = page.locator(confirmSelector).first();
-        const appeared = await confirm
-          .waitFor({ state: "visible", timeout: 4_000 })
-          .then(() => true)
-          .catch(() => false);
-        if (appeared) {
-          await confirm.click();
-          await waitForPageSettled(page);
-          confirmLog = `clicked session confirm ${confirmSelector}`;
-        }
+      const clickedPopup = await clickSecondPopupButton(page);
+      if (clickedPopup) {
+        await sleep(popupWaitMs);
+        await waitForPageSettled(page);
+        confirmLog = "clicked second popup button, waited for home";
+      } else {
+        await waitForPageSettled(page);
       }
 
       return {
@@ -238,6 +265,7 @@ export async function runScenarioOnBrowser(input: {
   browser: BrowserName;
   device: DevicePreset;
   baseUrl: string;
+  onSteps?: (steps: StepResult[]) => void;
 }): Promise<BrowserRunResult> {
   const browser = await launchNamedBrowser(input.browser);
   const logs: StepResult[] = [];
@@ -256,6 +284,7 @@ export async function runScenarioOnBrowser(input: {
           durationMs: 0,
           log: "Skipped after a previous failure.",
         });
+        input.onSteps?.([...logs]);
         continue;
       }
       const started = Date.now();
@@ -269,6 +298,7 @@ export async function runScenarioOnBrowser(input: {
         });
         await waitForPageSettled(page);
         logs.push({ ...result, durationMs: Date.now() - started });
+        input.onSteps?.([...logs]);
         if (result.status === "failed") failed = true;
       } catch (error) {
         failed = true;
@@ -281,6 +311,7 @@ export async function runScenarioOnBrowser(input: {
           log: "Step threw.",
           error: error instanceof Error ? error.message : "Step failed.",
         });
+        input.onSteps?.([...logs]);
       }
     }
 
@@ -300,6 +331,7 @@ export async function runScenario(input: {
   device?: DevicePreset;
   baseUrl: string;
   onLog?: (line: string) => void;
+  onBrowserSteps?: (browser: BrowserName, steps: StepResult[]) => void;
 }) {
   const browsers = input.browsers?.length ? input.browsers : input.scenario.browsers;
   const device = input.device ?? input.scenario.device;
@@ -312,6 +344,7 @@ export async function runScenario(input: {
       browser,
       device,
       baseUrl: input.baseUrl,
+      onSteps: (steps) => input.onBrowserSteps?.(browser, steps),
     });
     results.push(result);
     input.onLog?.(
