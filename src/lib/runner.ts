@@ -297,7 +297,14 @@ export async function runScenarioOnBrowser(input: {
           device: input.device,
         });
         await waitForPageSettled(page);
-        logs.push({ ...result, durationMs: Date.now() - started });
+        const extraWaitMs = parseWaitMs(step.params.waitMs, 0);
+        if (extraWaitMs > 0) await sleep(extraWaitMs);
+        logs.push({
+          ...result,
+          durationMs: Date.now() - started,
+          log:
+            extraWaitMs > 0 ? `${result.log}; waited ${extraWaitMs}ms` : result.log,
+        });
         input.onSteps?.([...logs]);
         if (result.status === "failed") failed = true;
       } catch (error) {

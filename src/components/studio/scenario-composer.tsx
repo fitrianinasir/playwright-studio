@@ -21,7 +21,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { CheckCircle2, CircleMinus, Eraser, GripVertical, Loader2, Play, Plus, Trash2, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { ACTION_CATALOG, catalogItem, defaultStep } from "@/lib/action-catalog";
+import { PALETTE_ACTIONS, catalogItem, defaultStep } from "@/lib/action-catalog";
 import type {
   ActionKind,
   Baseline,
@@ -417,7 +417,7 @@ export function ScenarioComposer({
           <CardContent>
             <ScrollArea className="h-[32rem]">
               <div className="flex flex-col gap-2 pr-3">
-                {ACTION_CATALOG.map((item) => (
+                {PALETTE_ACTIONS.map((item) => (
                   <div key={item.kind} className="flex gap-1">
                     <PaletteItem kind={item.kind} />
                     {canEdit ? (
@@ -599,6 +599,28 @@ export function ScenarioComposer({
                     )}
                   </div>
                 ))}
+                {selected.kind !== "wait" ? (
+                  <div className="space-y-2">
+                    <Label>Wait after this step (ms)</Label>
+                    <Input
+                      disabled={!canEdit}
+                      type="number"
+                      min={0}
+                      max={60000}
+                      step={100}
+                      placeholder="0"
+                      value={selected.params.waitMs ?? "0"}
+                      onChange={(event) =>
+                        updateSelected({
+                          params: { ...selected.params, waitMs: event.target.value },
+                        })
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Pause after this action before the next step. Use 0 for no extra wait.
+                    </p>
+                  </div>
+                ) : null}
                 {selected.kind === "screenshot" ? (
                   <div className="space-y-2 border-t pt-3">
                     <div className="flex items-center justify-between gap-2">

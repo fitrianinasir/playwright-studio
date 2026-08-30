@@ -118,6 +118,8 @@ export function catalogItem(kind: ActionKind) {
   return ACTION_CATALOG.find((item) => item.kind === kind)!;
 }
 
+export const PALETTE_ACTIONS = ACTION_CATALOG.filter((item) => item.kind !== "wait");
+
 export function defaultStep(kind: ActionKind): ScenarioStep {
   const item = catalogItem(kind);
   const params: Record<string, string> = {};
@@ -129,6 +131,7 @@ export function defaultStep(kind: ActionKind): ScenarioStep {
   if (kind === "login") {
     params.popupWaitMs = "5000";
   }
+  params.waitMs = "0";
   return {
     id: crypto.randomUUID(),
     kind,
