@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   Camera,
   ClipboardList,
-  FlaskConical,
   GitCompare,
   ScanSearch,
   Workflow,
@@ -46,12 +45,6 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
               </Link>
             </Button>
           ))}
-          <Button variant="ghost" className="justify-start" asChild>
-            <Link href="/demo/webpage">
-              <FlaskConical data-icon="inline-start" />
-              Demo webpage
-            </Link>
-          </Button>
         </nav>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col bg-background">{children}</div>

@@ -1,11 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
   CheckCircle2,
-  FlaskConical,
   Loader2,
   ScanSearch,
 } from "lucide-react";
@@ -41,11 +40,6 @@ import type { CompareResponse } from "@/lib/types";
 
 const DEFAULT_TARGET = "compare-target";
 
-function originFromWindow() {
-  if (typeof window === "undefined") return "";
-  return window.location.origin;
-}
-
 export function TesterApp() {
   const [webpageUrl, setWebpageUrl] = useState("");
   const [targetId, setTargetId] = useState(DEFAULT_TARGET);
@@ -54,16 +48,6 @@ export function TesterApp() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CompareResponse | null>(null);
-
-  const demoReady = useMemo(() => originFromWindow(), []);
-
-  function fillDemo() {
-    const origin = originFromWindow();
-    setWebpageUrl(`${origin}/demo/webpage`);
-    setTargetId(DEFAULT_TARGET);
-    setFigmaUrl(`${origin}/demo/figma`);
-    setError(null);
-  }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -117,10 +101,7 @@ export function TesterApp() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" asChild>
-            <Link href="/demo/webpage">Demo webpage</Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="https://www.figma.com/design/LFFc9W0ZIAYKzVgmvHp8Tr/VTA-APP?node-id=4-2&t=Pt1aG0ZRa48LgmlW-4" target="_blank">Demo Figma</Link>
+            <Link href="https://www.figma.com/design/LFFc9W0ZIAYKzVgmvHp8Tr/VTA-APP?node-id=4-2&t=Pt1aG0ZRa48LgmlW-4" target="_blank">Open Figma</Link>
           </Button>
         </div>
       </header>
@@ -183,14 +164,6 @@ export function TesterApp() {
                   extra delay for GSAP/canvas animations.
                 </p>
               </div>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={fillDemo}
-              >
-                <FlaskConical data-icon="inline-start" />
-                Use local demo
-              </Button>
               <Button type="submit" disabled={loading}>
                 {loading ? (
                   <Loader2 className="animate-spin" data-icon="inline-start" />
@@ -215,9 +188,9 @@ export function TesterApp() {
               <CardHeader>
                 <CardTitle>No results yet</CardTitle>
                 <CardDescription>
-                  Load the demo pages, then run a test. Dummy names, lorem
-                  copy, and mismatched live data are whitelisted so layout
-                  accuracy can still approach 100%.
+                  Paste your live webpage URL and a Figma or design URL, then
+                  run a test. Dummy copy and mismatched live data are
+                  whitelisted so layout accuracy can still approach 100%.
                 </CardDescription>
               </CardHeader>
             </Card>

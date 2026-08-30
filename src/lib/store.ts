@@ -66,7 +66,7 @@ function seedStepsLogin(): ScenarioStep[] {
       id: "step_nav_login",
       kind: "navigate",
       name: "Open login",
-      params: { url: "/demo/app/login" },
+      params: { url: "" },
     },
     {
       id: "step_login",
@@ -77,16 +77,17 @@ function seedStepsLogin(): ScenarioStep[] {
         userIdSelector: '[name="user_id"]',
         keybcaSelector: '[name="keybca"]',
         submitSelector: "button[type=submit]",
-        corporateId: "ACME01",
-        userId: "designer",
-        keybca: "123456",
+        sessionConfirmSelector: '[name="btnContinue"]',
+        corporateId: "",
+        userId: "",
+        keybca: "",
       },
     },
     {
       id: "step_assert_welcome",
       kind: "assertText",
       name: "See welcome title",
-      params: { selector: "#welcome-title", text: "Welcome back" },
+      params: { selector: "#welcome-title", text: "" },
     },
     {
       id: "step_shot",
@@ -104,9 +105,9 @@ function seedStepsVisual(): ScenarioStep[] {
       kind: "visualCompare",
       name: "Hero vs Figma",
       params: {
-        webpageUrl: "/demo/webpage",
-        targetId: "compare-target",
-        figmaUrl: "/demo/figma",
+        webpageUrl: "",
+        targetId: "",
+        figmaUrl: "",
       },
     },
   ];
@@ -115,8 +116,8 @@ function seedStepsVisual(): ScenarioStep[] {
 function createSeed(): StudioState {
   const project: Project = {
     id: PROJECT_ID,
-    name: "Acme Marketing Site",
-    description: "Demo project for no-code e2e and Figma visual tests.",
+    name: "Target app",
+    description: "No-code e2e and Figma visual tests against your live site.",
     createdAt: nowIso(),
   };
 
@@ -127,7 +128,7 @@ function createSeed(): StudioState {
         id: "scn_login",
         projectId: project.id,
         name: "Login → home snapshot",
-        description: "Chain login, assert, and a visual regression screenshot.",
+        description: "Chain login, assert, and a visual regression screenshot. Set the Navigate URL to your live login page.",
         steps: seedStepsLogin(),
         browsers: ["chromium"],
         device: "desktop",
@@ -137,8 +138,7 @@ function createSeed(): StudioState {
         id: "scn_hero",
         projectId: project.id,
         name: "Hero vs Figma design",
-        description:
-          "Visual compare against the dummy Figma page, with dummy-text whitelist.",
+        description: "Visual compare a live page section against a Figma or design URL.",
         steps: seedStepsVisual(),
         browsers: ["chromium"],
         device: "desktop",
@@ -319,12 +319,55 @@ const globalForStore = globalThis as typeof globalThis & {
 
 function snapshotState(store: StudioZustandStore): StudioState {
   const state = store.getState();
-  return migrateLoginSteps({
-    projects: state.projects,
-    scenarios: state.scenarios,
-    runs: state.runs,
-    baselines: state.baselines,
-  });
+  return stripDemoUrls(
+    migrateLoginSteps({
+      projects: state.projects,
+      scenarios: state.scenarios,
+      runs: state.runs,
+      baselines: state.baselines,
+    }),
+  );
+}
+
+function stripDemoUrls(state: StudioState): StudioState {
+  const clearIfDemo = (value?: string) =>
+    value?.includes("/demo/") ? "" : (value ?? "");
+
+  return {
+    ...state,
+    scenarios: state.scenarios.map((scenario) => ({
+      ...scenario,
+      steps: scenario.steps.map((step) => {
+        if (step.kind === "navigate") {
+          return {
+            ...step,
+            params: { ...step.params, url: clearIfDemo(step.params.url) },
+          };
+        }
+        if (step.kind === "visualCompare") {
+          return {
+            ...step,
+            params: {
+              ...step.params,
+              webpageUrl: clearIfDemo(step.params.webpageUrl),
+              figmaUrl: clearIfDemo(step.params.figmaUrl),
+            },
+          };
+        }
+        if (step.kind === "login") {
+          const params = { ...step.params };
+          if (params.corporateId === "ACME01") params.corporateId = "";
+          if (params.userId === "designer") params.userId = "";
+          if (params.keybca === "123456") params.keybca = "";
+          return { ...step, params };
+        }
+        if (step.kind === "assertText" && step.params.text === "Welcome back") {
+          return { ...step, params: { ...step.params, text: "" } };
+        }
+        return step;
+      }),
+    })),
+  };
 }
 
 function migrateLoginSteps(state: StudioState): StudioState {
@@ -335,7 +378,14 @@ function migrateLoginSteps(state: StudioState): StudioState {
       steps: scenario.steps.map((step) => {
         if (step.kind !== "login") return step;
         if (!("emailSelector" in step.params) && step.params.corporateIdSelector) {
-          return step;
+          if (step.params.sessionConfirmSelector) return step;
+          return {
+            ...step,
+            params: {
+              ...step.params,
+              sessionConfirmSelector: '[name="btnContinue"]',
+            },
+          };
         }
         return {
           ...step,
@@ -348,6 +398,7 @@ function migrateLoginSteps(state: StudioState): StudioState {
             userIdSelector: '[name="user_id"]',
             keybcaSelector: '[name="keybca"]',
             submitSelector: step.params.submitSelector || "button[type=submit]",
+            sessionConfirmSelector: '[name="btnContinue"]',
             corporateId: "ACME01",
             userId: "designer",
             keybca: "123456",

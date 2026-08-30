@@ -48,7 +48,7 @@ export async function runVisualCompare(
   if (figma) {
     if (!token) {
       throw new Error(
-        "This looks like a Figma file link. Set FIGMA_ACCESS_TOKEN in .env.local, or paste a public page that renders the design (try /demo/figma).",
+        "This looks like a Figma file link. Set FIGMA_ACCESS_TOKEN in .env.local, or paste a public page that renders the design.",
       );
     }
     const exported = await fetchFigmaSection(figmaUrl, token);

@@ -5,12 +5,12 @@ export const ACTION_CATALOG: ActionCatalogItem[] = [
     kind: "navigate",
     label: "Navigate",
     description: "Open a URL or app path",
-    fields: [{ key: "url", label: "URL", placeholder: "/demo/app/login" }],
+    fields: [{ key: "url", label: "URL", placeholder: "https://your-app.example/login" }],
   },
   {
     kind: "login",
     label: "Login",
-    description: "Fill Corporate_id, user_id, and keybca, then submit",
+    description: "Fill Corporate_id, user_id, and keybca, then submit. Clicks a session-confirm popup if it appears.",
     fields: [
       {
         key: "corporateIdSelector",
@@ -31,6 +31,11 @@ export const ACTION_CATALOG: ActionCatalogItem[] = [
       },
       { key: "keybca", label: "keybca", placeholder: "123456" },
       { key: "submitSelector", label: "Submit selector", placeholder: "button[type=submit]" },
+      {
+        key: "sessionConfirmSelector",
+        label: "Session confirm selector (optional)",
+        placeholder: '[name="btnContinue"]',
+      },
     ],
   },
   {
@@ -101,9 +106,9 @@ export const ACTION_CATALOG: ActionCatalogItem[] = [
     label: "Figma visual compare",
     description: "Compare a section to a Figma/design URL",
     fields: [
-      { key: "webpageUrl", label: "Webpage URL (blank = current page)", placeholder: "/demo/webpage" },
+      { key: "webpageUrl", label: "Webpage URL (blank = current page)", placeholder: "https://your-app.example/home" },
       { key: "targetId", label: "Target ID", placeholder: "compare-target" },
-      { key: "figmaUrl", label: "Figma / design URL", placeholder: "/demo/figma" },
+      { key: "figmaUrl", label: "Figma / design URL", placeholder: "https://www.figma.com/design/..." },
       { key: "settleMs", label: "Wait after load (ms)", placeholder: "3000" },
     ],
   },

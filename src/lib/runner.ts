@@ -37,6 +37,12 @@ function required(step: ScenarioStep, key: string) {
   return value;
 }
 
+/** Wait until navigations and in-flight requests finish before the next step. */
+async function waitForPageSettled(page: Page) {
+  await page.waitForLoadState("load", { timeout: 30_000 }).catch(() => undefined);
+  await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
+}
+
 async function captureStepScreenshot(page: Page, selector?: string) {
   if (selector?.trim()) {
     const loc = page.locator(selector).first();
@@ -108,13 +114,29 @@ async function runStep(
       await page.locator(userIdSelector).fill(required(step, "userId"));
       await page.locator(keybcaSelector).fill(required(step, "keybca"));
       await page.locator(required(step, "submitSelector")).click();
-      await page.waitForLoadState("load");
+      await waitForPageSettled(page);
+
+      const confirmSelector = step.params.sessionConfirmSelector?.trim();
+      let confirmLog = "no session popup";
+      if (confirmSelector) {
+        const confirm = page.locator(confirmSelector).first();
+        const appeared = await confirm
+          .waitFor({ state: "visible", timeout: 4_000 })
+          .then(() => true)
+          .catch(() => false);
+        if (appeared) {
+          await confirm.click();
+          await waitForPageSettled(page);
+          confirmLog = `clicked session confirm ${confirmSelector}`;
+        }
+      }
+
       return {
         stepId: step.id,
         name: step.name,
         kind: step.kind,
         status: "passed",
-        log: `Submitted login via ${corporateIdSelector}, ${userIdSelector}, ${keybcaSelector}`,
+        log: `Submitted login via ${corporateIdSelector}, ${userIdSelector}, ${keybcaSelector}; ${confirmLog}`,
       };
     }
     case "fill": {
@@ -123,6 +145,7 @@ async function runStep(
     }
     case "click": {
       await page.locator(required(step, "selector")).click();
+      await waitForPageSettled(page);
       return { stepId: step.id, name: step.name, kind: step.kind, status: "passed", log: `Clicked ${step.params.selector}` };
     }
     case "hover": {
@@ -131,6 +154,7 @@ async function runStep(
     }
     case "selectOption": {
       await page.locator(required(step, "selector")).selectOption(required(step, "value"));
+      await waitForPageSettled(page);
       return { stepId: step.id, name: step.name, kind: step.kind, status: "passed", log: `Selected ${step.params.value}` };
     }
     case "wait": {
@@ -243,6 +267,7 @@ export async function runScenarioOnBrowser(input: {
           browser: input.browser,
           device: input.device,
         });
+        await waitForPageSettled(page);
         logs.push({ ...result, durationMs: Date.now() - started });
         if (result.status === "failed") failed = true;
       } catch (error) {
