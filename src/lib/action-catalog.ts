@@ -15,7 +15,7 @@ export const ACTION_CATALOG: ActionCatalogItem[] = [
       {
         key: "corporateIdSelector",
         label: "Corporate_id selector",
-        placeholder: '[name="Corporate_id"]',
+        placeholder: '[name="corporate_id"]',
       },
       { key: "corporateId", label: "Corporate_id", placeholder: "ACME01" },
       {
@@ -27,7 +27,7 @@ export const ACTION_CATALOG: ActionCatalogItem[] = [
       {
         key: "keybcaSelector",
         label: "keybca selector",
-        placeholder: '[name="keybca"]',
+        placeholder: '[name="appli1"]',
       },
       { key: "keybca", label: "keybca", placeholder: "123456" },
       { key: "submitSelector", label: "Submit selector", placeholder: "button[type=submit]" },

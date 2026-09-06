@@ -74,9 +74,9 @@ function seedStepsLogin(): ScenarioStep[] {
       kind: "login",
       name: "Sign in with corporate credentials",
       params: {
-        corporateIdSelector: '[name="Corporate_id"]',
+        corporateIdSelector: '[name="corporate_id"]',
         userIdSelector: '[name="user_id"]',
-        keybcaSelector: '[name="keybca"]',
+        keybcaSelector: '[name="appli1"]',
         submitSelector: "button[type=submit]",
         popupWaitMs: "5000",
         corporateId: "",
@@ -408,9 +408,9 @@ function migrateLoginSteps(state: StudioState): StudioState {
                 ? "Sign in with corporate credentials"
                 : step.name,
             params: {
-              corporateIdSelector: '[name="Corporate_id"]',
+              corporateIdSelector: '[name="corporate_id"]',
               userIdSelector: '[name="user_id"]',
-              keybcaSelector: '[name="keybca"]',
+              keybcaSelector: '[name="appli1"]',
               submitSelector: params.submitSelector || "button[type=submit]",
               popupWaitMs: "5000",
               corporateId: params.corporateId || params.email || "",
