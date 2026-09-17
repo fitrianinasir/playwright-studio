@@ -39,6 +39,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CompareResponse } from "@/lib/types";
 
 const DEFAULT_TARGET = "compare-target";
+const FIGMA_NODE_URL =
+  "https://www.figma.com/design/LFFc9W0ZIAYKzVgmvHp8Tr/VTA-APP?node-id=4-2";
 
 export function TesterApp() {
   const [webpageUrl, setWebpageUrl] = useState("");
@@ -101,7 +103,14 @@ export function TesterApp() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" asChild>
-            <Link href="https://www.figma.com/design/LFFc9W0ZIAYKzVgmvHp8Tr/VTA-APP?node-id=4-2&t=Pt1aG0ZRa48LgmlW-4" target="_blank">Open Figma</Link>
+            <Link href="/demo/webpage" target="_blank">
+              Demo webpage
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href={FIGMA_NODE_URL} target="_blank">
+              Open Figma
+            </Link>
           </Button>
         </div>
       </header>
@@ -164,12 +173,36 @@ export function TesterApp() {
                   extra delay for GSAP/canvas animations.
                 </p>
               </div>
-              <Button type="submit" disabled={loading}>
-                {loading ? (
-                  <Loader2 className="animate-spin" data-icon="inline-start" />
-                ) : null}
-                {loading ? "Capturing…" : "Run visual test"}
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setWebpageUrl(`${window.location.origin}/demo/webpage`);
+                    setTargetId(DEFAULT_TARGET);
+                    setFigmaUrl(FIGMA_NODE_URL);
+                  }}
+                >
+                  Use local demo + Figma
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setWebpageUrl(`${window.location.origin}/demo/webpage`);
+                    setTargetId(DEFAULT_TARGET);
+                    setFigmaUrl(`${window.location.origin}/demo/figma`);
+                  }}
+                >
+                  Use design page (no token)
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? (
+                    <Loader2 className="animate-spin" data-icon="inline-start" />
+                  ) : null}
+                  {loading ? "Capturing…" : "Run visual test"}
+                </Button>
+              </div>
             </form>
           </CardContent>
         </Card>

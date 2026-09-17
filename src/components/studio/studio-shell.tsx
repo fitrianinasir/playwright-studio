@@ -46,6 +46,11 @@ export function StudioShell({ children }: { children: React.ReactNode }) {
             </Button>
           ))}
         </nav>
+        <Button variant="ghost" className="mt-auto justify-start" asChild>
+          <Link href="/demo/webpage" target="_blank">
+            Demo webpage
+          </Link>
+        </Button>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col bg-background">{children}</div>
     </div>
