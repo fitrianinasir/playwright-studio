@@ -1,6 +1,6 @@
 import type { TestRun } from "@/lib/studio-types";
 
-export function buildHtmlReport(run: TestRun, scenarioName: string, projectName: string) {
+export function buildHtmlReport(run: TestRun, scenarioName: string) {
   const rows = run.results
     .flatMap((result) =>
       result.steps.map(
@@ -40,7 +40,7 @@ export function buildHtmlReport(run: TestRun, scenarioName: string, projectName:
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>${escapeHtml(projectName)} — ${escapeHtml(scenarioName)} report</title>
+    <title>${escapeHtml(scenarioName)} report</title>
     <style>
       body { font-family: ui-sans-serif, system-ui, sans-serif; margin: 32px; color: #111; }
       .pass { color: #15803d; } .fail { color: #b91c1c; }
@@ -54,7 +54,7 @@ export function buildHtmlReport(run: TestRun, scenarioName: string, projectName:
   </head>
   <body>
     <h1>Playwright Studio report</h1>
-    <p>${escapeHtml(projectName)} / ${escapeHtml(scenarioName)}</p>
+    <p>${escapeHtml(scenarioName)}</p>
     <p>Run <code>${run.id}</code> — <strong class="${run.status}">${run.status}</strong></p>
     <p>Browsers: ${run.browsers.join(", ")} · Device: ${run.device}</p>
     <h2>Steps</h2>

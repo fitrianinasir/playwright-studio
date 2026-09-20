@@ -1,8 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { firstQuery, jsonError, methodNotAllowed, originFrom } from "@/lib/api";
-import { addRun, getRun, getScenario, updateRun } from "@/lib/store";
+import { addRun, getRun, updateRun } from "@/lib/store";
 import { runScenario } from "@/lib/runner";
 import type { BrowserName, DevicePreset, TestRun } from "@/lib/studio-types";
+import { prisma } from "@/lib/prisma";
+import { toStudioScenario } from "@/lib/scenario-map";
 
 export const config = {
   api: {
@@ -13,38 +15,39 @@ export const config = {
   maxDuration: 60,
 };
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (methodNotAllowed(req, res, ["POST"])) return;
 
   const scenarioId = firstQuery(req.query.scenarioId);
-  const scenario = getScenario(scenarioId);
-  if (!scenario) {
+  const row = await prisma.scenario.findUnique({
+    where: { id: scenarioId },
+    include: { steps: true },
+  });
+
+  if (!row) {
     jsonError(res, "Scenario not found.", 404);
     return;
   }
 
-  const body = (req.body ?? {}) as {
-    browsers?: BrowserName[];
-    device?: DevicePreset;
-    baseUrl?: string;
-  };
+  const scenario = toStudioScenario(row);
+
 
   const logs: string[] = [];
   const run: TestRun = {
     id: `run_${crypto.randomUUID().slice(0, 8)}`,
-    projectId: scenario.projectId,
     scenarioId: scenario.id,
     status: "running",
     startedAt: new Date().toISOString(),
     finishedAt: null,
-    browsers: body.browsers?.length ? body.browsers : scenario.browsers,
-    device: body.device ?? scenario.device,
+    browsers: scenario.browsers as BrowserName[],
+    device: scenario.device as DevicePreset,
     results: [],
     logs,
   };
   addRun(run);
 
-  const baseUrl = originFrom(req, body.baseUrl);
+  console.log("[run]", req)
+  const baseUrl = originFrom(req, "");
   res.status(200).json({ run });
 
   void (async () => {

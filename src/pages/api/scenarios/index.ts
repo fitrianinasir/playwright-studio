@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { firstQuery, jsonError, methodNotAllowed } from "@/lib/api";
+import { jsonError, methodNotAllowed } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 
 export default async function handler(
@@ -33,30 +33,5 @@ export default async function handler(
     }
   }
 
-  if (req.method === "PUT") {
-    try {
-      const scenario = await prisma.scenario.update({
-        where: { id: req.query.id as string },
-        data: req.body,
-      });
-      return res.status(200).json({ scenario });
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Could not update scenario.";
-      return jsonError(res, message, 500);
-    }
-  }
-
-  if (req.method === "DELETE") {
-    try {
-      const scenario = await prisma.scenario.delete({
-        where: { id: req.query.id as string },
-      });
-      return res.status(200).json({ scenario });
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Could not delete scenario.";
-      return jsonError(res, message, 500);
-    }
-  }
+  methodNotAllowed(req, res, ["GET", "POST"]);
 }

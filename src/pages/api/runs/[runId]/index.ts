@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { firstQuery, jsonError, methodNotAllowed } from "@/lib/api";
-import { getRun, getScenario, saveBaseline } from "@/lib/store";
+import { prisma } from "@/lib/prisma";
+import { getRun, saveBaseline } from "@/lib/store";
 import type { TestRun } from "@/lib/studio-types";
 
 export const config = {
@@ -26,7 +27,10 @@ function slimRun(run: TestRun): TestRun {
   };
 }
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   const runId = firstQuery(req.query.runId);
   const run = getRun(runId);
   if (!run) {
@@ -36,9 +40,13 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
   if (req.method === "GET") {
     const slim = firstQuery(req.query.slim) === "1";
+    const row = await prisma.scenario.findUnique({
+      where: { id: run.scenarioId },
+      include: { steps: true },
+    });
     res.status(200).json({
       run: slim ? slimRun(run) : run,
-      scenario: getScenario(run.scenarioId),
+      scenario: row,
     });
     return;
   }
@@ -62,7 +70,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       return;
     }
     const baseline = saveBaseline({
-      projectId: run.projectId,
       scenarioId: run.scenarioId,
       snapshotName: body.snapshotName || step?.name || "snapshot",
       browser: browserResult.browser,

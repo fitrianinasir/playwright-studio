@@ -12,7 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PROJECT_ID } from "@/lib/project";
 import type { Baseline, TestRun } from "@/lib/studio-types";
 
 type Pair = {
@@ -26,7 +25,7 @@ export default function RegressionPage() {
   const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/projects/${PROJECT_ID}/runs`)
+    fetch(`/api/runs`)
       .then((response) => response.json())
       .then((payload) => {
         setRuns(payload.runs ?? []);
@@ -73,7 +72,7 @@ export default function RegressionPage() {
     }
     setClearing(true);
     try {
-      const response = await fetch(`/api/projects/${PROJECT_ID}/runs`, {
+      const response = await fetch(`/api/runs`, {
         method: "DELETE",
       });
       const payload = await response.json().catch(() => ({}));

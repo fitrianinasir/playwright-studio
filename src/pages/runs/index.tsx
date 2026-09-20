@@ -7,14 +7,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PROJECT_ID } from "@/lib/project";
 import type { TestRun } from "@/lib/studio-types";
 
 export default function RunsPage() {
   const [runs, setRuns] = useState<TestRun[]>([]);
 
   useEffect(() => {
-    fetch(`/api/projects/${PROJECT_ID}/runs`)
+    fetch(`/api/runs`)
       .then((response) => response.json())
       .then((payload) => setRuns(payload.runs ?? []));
   }, []);

@@ -84,7 +84,6 @@ async function captureStepScreenshot(page: Page, selector?: string) {
 }
 
 async function compareToBaseline(input: {
-  projectId: string;
   scenarioId: string;
   snapshotName: string;
   browser: BrowserName;
@@ -125,7 +124,6 @@ async function runStep(
   step: ScenarioStep,
   ctx: {
     baseUrl: string;
-    projectId: string;
     scenarioId: string;
     browser: BrowserName;
     device: DevicePreset;
@@ -210,7 +208,6 @@ async function runStep(
       const name = required(step, "name");
       const buffer = await captureStepScreenshot(page, step.params.selector);
       const compared = await compareToBaseline({
-        projectId: ctx.projectId,
         scenarioId: ctx.scenarioId,
         snapshotName: name,
         browser: ctx.browser,
@@ -291,7 +288,6 @@ export async function runScenarioOnBrowser(input: {
       try {
         const result = await runStep(page, step, {
           baseUrl: input.baseUrl,
-          projectId: input.scenario.projectId,
           scenarioId: input.scenario.id,
           browser: input.browser,
           device: input.device,

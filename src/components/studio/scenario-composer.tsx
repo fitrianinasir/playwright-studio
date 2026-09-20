@@ -210,8 +210,11 @@ export function ScenarioComposer({
   canEdit: boolean;
 }) {
   const router = useRouter();
-  const [draft, setDraft] = useState(scenario);
-  const [selectedId, setSelectedId] = useState(scenario.steps[0]?.id ?? "");
+  const [draft, setDraft] = useState({
+    ...scenario,
+    steps: scenario.steps ?? [],
+  });
+  const [selectedId, setSelectedId] = useState(scenario.steps?.[0]?.id ?? "");
   const [saving, setSaving] = useState(false);
   const [running, setRunning] = useState(false);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);

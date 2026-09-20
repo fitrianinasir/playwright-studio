@@ -1,24 +1,29 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { firstQuery, jsonError, methodNotAllowed } from "@/lib/api";
+import { prisma } from "@/lib/prisma";
 import {
   clearBaselinesForScenario,
   deleteBaseline,
-  getScenario,
   listBaselines,
 } from "@/lib/store";
 
+async function scenarioExists(scenarioId: string) {
+  const count = await prisma.scenario.count({ where: { id: scenarioId } });
+  return count > 0;
+}
+
 function scenarioBaselines(scenarioId: string) {
-  const scenario = getScenario(scenarioId);
-  if (!scenario) return null;
-  return listBaselines(scenario.projectId).filter(
+  return listBaselines().filter(
     (baseline) => baseline.scenarioId === scenarioId,
   );
 }
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   const scenarioId = firstQuery(req.query.scenarioId);
-  const scenario = getScenario(scenarioId);
-  if (!scenario) {
+  if (!(await scenarioExists(scenarioId))) {
     jsonError(res, "Scenario not found.", 404);
     return;
   }
@@ -40,8 +45,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         jsonError(res, "baselineId is required.");
         return;
       }
-      const baselines = scenarioBaselines(scenarioId) ?? [];
-      const match = baselines.find((baseline) => baseline.id === baselineId);
+      const match = scenarioBaselines(scenarioId).find(
+        (baseline) => baseline.id === baselineId,
+      );
       if (!match) {
         jsonError(res, "Baseline not found for this scenario.", 404);
         return;
@@ -64,8 +70,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === "DELETE") {
     const baselineId = firstQuery(req.query.baselineId).trim();
     if (baselineId) {
-      const baselines = scenarioBaselines(scenarioId) ?? [];
-      const match = baselines.find((baseline) => baseline.id === baselineId);
+      const match = scenarioBaselines(scenarioId).find(
+        (baseline) => baseline.id === baselineId,
+      );
       if (!match) {
         jsonError(res, "Baseline not found for this scenario.", 404);
         return;

@@ -33,7 +33,7 @@ export default function HomePage() {
 
   useEffect(() => {
     axios
-      .get(`/api/projects/scenarios`)
+      .get(`/api/scenarios`)
       .then((res) => setScenarios(res.data.scenarios))
       .then((err) => console.log("err", err));
   }, []);
@@ -48,7 +48,7 @@ export default function HomePage() {
     };
 
     await axios
-      .post(`/api/projects/scenarios`, payload)
+      .post(`/api/scenarios`, payload)
       .then((res) => {
         setScenarios([...scenarios, res.data.scenario]);
         toast.success("Scenario created");
@@ -70,7 +70,7 @@ export default function HomePage() {
     }
 
     await axios
-      .delete(`/api/projects/scenarios`, { params: { id: scenario.id } })
+      .delete(`/api/scenarios/${scenario.id}`)
       .then(() => {
         setScenarios(scenarios.filter((s) => s.id !== scenario.id));
         toast.success("Scenario deleted");

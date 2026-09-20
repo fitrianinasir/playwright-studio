@@ -34,13 +34,6 @@ export type ActionKind =
   | "screenshot"
   | "visualCompare";
 
-export type Project = {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: string;
-};
-
 export type ScenarioStep = {
   id: string;
   kind: ActionKind;
@@ -50,7 +43,7 @@ export type ScenarioStep = {
 
 export type Scenario = {
   id: string;
-  projectId: string;
+  user_id: string;
   name: string;
   description: string;
   steps: ScenarioStep[];
@@ -84,7 +77,6 @@ export type BrowserRunResult = {
 
 export type TestRun = {
   id: string;
-  projectId: string;
   scenarioId: string;
   status: RunStatus;
   startedAt: string;
@@ -97,7 +89,6 @@ export type TestRun = {
 
 export type Baseline = {
   id: string;
-  projectId: string;
   scenarioId: string;
   snapshotName: string;
   browser: BrowserName;
