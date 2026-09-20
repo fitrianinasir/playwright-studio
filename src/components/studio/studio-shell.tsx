@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouter } from "next/router";
 import {
   Camera,
   ClipboardList,
@@ -19,7 +19,8 @@ const LINKS = [
 ];
 
 export function StudioShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  const { asPath } = useRouter();
+  const pathname = asPath.split("?")[0];
 
   return (
     <div className="flex min-h-full flex-1">
