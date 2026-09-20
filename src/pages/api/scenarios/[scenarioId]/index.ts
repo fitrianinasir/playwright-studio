@@ -1,17 +1,24 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { firstQuery, jsonError, methodNotAllowed } from "@/lib/api";
 import { deleteScenario, getScenario, updateScenario } from "@/lib/store";
-import type { BrowserName, DevicePreset, ScenarioStep } from "@/lib/studio-types";
+import type {
+  BrowserName,
+  DevicePreset,
+  ScenarioStep,
+} from "@/lib/studio-types";
+import { prisma } from "@/lib/prisma";
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   const scenarioId = firstQuery(req.query.scenarioId);
-  const scenario = getScenario(scenarioId);
-  if (!scenario) {
-    jsonError(res, "Scenario not found.", 404);
-    return;
-  }
 
   if (req.method === "GET") {
+    const scenario = await prisma.scenario.findUnique({
+      where: { id: scenarioId },
+      include: { steps: true },
+    });
     res.status(200).json({ scenario });
     return;
   }

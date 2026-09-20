@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/router";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { PROJECT_ID } from "@/lib/project";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,34 +20,43 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { Scenario } from "@/lib/studio-types";
-
+import { Scenario } from "@/lib/newTypes";
+import axios from "axios";
+import { useRouter } from "next/router";
 export default function HomePage() {
   const router = useRouter();
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/projects/${PROJECT_ID}/scenarios`)
-      .then((response) => response.json())
-      .then((payload) => setScenarios(payload.scenarios ?? []));
+    axios
+      .get(`/api/projects/scenarios`)
+      .then((res) => setScenarios(res.data.scenarios))
+      .then((err) => console.log("err", err));
   }, []);
 
   async function create() {
-    const response = await fetch(`/api/projects/${PROJECT_ID}/scenarios`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, description }),
-    });
-    const payload = await response.json();
-    if (!response.ok) {
-      toast.error(payload.error || "Could not create scenario");
-      return;
-    }
-    router.push(`/builder/${payload.scenario.id}`);
+    const payload: Scenario = {
+      name: name,
+      description: description,
+      browsers: [],
+      device: "",
+      user_id: "4e2d4559-dac9-4b9d-a019-92162f3373be",
+    };
+
+    await axios
+      .post(`/api/projects/scenarios`, payload)
+      .then((res) => {
+        setScenarios([...scenarios, res.data.scenario]);
+        toast.success("Scenario created");
+        setOpen(false);
+        router.push(`/builder/${res.data.scenario.id}`);
+      })
+      .catch(() => {
+        toast.error("Could not create scenario");
+      });
   }
 
   async function remove(scenario: Scenario) {
@@ -60,21 +67,17 @@ export default function HomePage() {
     ) {
       return;
     }
-    setDeletingId(scenario.id);
-    try {
-      const response = await fetch(`/api/scenarios/${scenario.id}`, {
-        method: "DELETE",
+
+    await axios
+      .delete(`/api/projects/scenarios`, { params: { id: scenario.id } })
+      .then(() => {
+        setScenarios(scenarios.filter((s) => s.id !== scenario.id));
+        toast.success("Scenario deleted");
+      })
+      .catch((err) => {
+        toast.error("Could not delete scenario");
+        console.log("err", err);
       });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        toast.error(payload.error || "Could not delete scenario");
-        return;
-      }
-      setScenarios((current) => current.filter((item) => item.id !== scenario.id));
-      toast.success("Scenario deleted");
-    } finally {
-      setDeletingId(null);
-    }
   }
 
   return (
@@ -83,8 +86,8 @@ export default function HomePage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Scenarios</h1>
           <p className="text-sm text-muted-foreground">
-            Build no-code e2e and Figma visual tests. Runs stay in memory until the
-            server restarts.
+            Build no-code e2e and Figma visual tests. Runs stay in memory until
+            the server restarts.
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -101,7 +104,10 @@ export default function HomePage() {
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label>Name</Label>
-                <Input value={name} onChange={(event) => setName(event.target.value)} />
+                <Input
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Description</Label>
@@ -123,7 +129,7 @@ export default function HomePage() {
               <CardDescription>{scenario.description}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              <span>{scenario.steps.length} steps</span>
+              <span>{scenario?.steps?.length} steps</span>
               <span>· {scenario.browsers.join(", ")}</span>
               <span>· {scenario.device}</span>
               <div className="ml-auto flex items-center gap-2">
@@ -131,11 +137,10 @@ export default function HomePage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  disabled={deletingId === scenario.id}
-                  onClick={() => void remove(scenario)}
+                  onClick={() => remove(scenario)}
                 >
                   <Trash2 data-icon="inline-start" />
-                  {deletingId === scenario.id ? "Deleting…" : "Delete"}
+                  Delete
                 </Button>
                 <Button asChild>
                   <Link href={`/builder/${scenario.id}`}>Edit in composer</Link>
