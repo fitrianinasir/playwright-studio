@@ -19,10 +19,28 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CheckCircle2, CircleMinus, Eraser, GripVertical, Loader2, Play, Plus, Trash2, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  CircleMinus,
+  Eraser,
+  GripVertical,
+  Loader2,
+  Play,
+  Plus,
+  Trash2,
+  XCircle,
+} from "lucide-react";
 import { toast } from "sonner";
-import { PALETTE_ACTIONS, catalogItem, defaultStep } from "@/lib/action-catalog";
-import { DEVICE_PRESETS, normalizeDevice, type DevicePreset } from "@/lib/studio-types";
+import {
+  PALETTE_ACTIONS,
+  catalogItem,
+  defaultStep,
+} from "@/lib/action-catalog";
+import {
+  DEVICE_PRESETS,
+  normalizeDevice,
+  type DevicePreset,
+} from "@/lib/studio-types";
 import type {
   ActionKind,
   Baseline,
@@ -53,14 +71,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-
+import axios from "axios";
 const BROWSERS: BrowserName[] = ["chromium", "firefox", "webkit"];
 
 type StepRunUiStatus = StepStatus | "pending" | "idle";
 
-function statusesFromRun(run: TestRun, stepIds: string[]): Record<string, StepRunUiStatus> {
+function statusesFromRun(
+  run: TestRun,
+  stepIds: string[],
+): Record<string, StepRunUiStatus> {
   const live = run.results[run.results.length - 1];
-  const done = new Map(live?.steps.map((step) => [step.stepId, step.status]) ?? []);
+  const done = new Map(
+    live?.steps.map((step) => [step.stepId, step.status]) ?? [],
+  );
   const next: Record<string, StepRunUiStatus> = {};
   for (const id of stepIds) {
     const status = done.get(id);
@@ -73,14 +96,27 @@ function statusesFromRun(run: TestRun, stepIds: string[]): Record<string, StepRu
 function StepRunIcon({ status }: { status: StepRunUiStatus }) {
   if (status === "idle") return null;
   if (status === "passed") {
-    return <CheckCircle2 className="size-4 shrink-0 text-green-600" aria-label="Step passed" />;
+    return (
+      <CheckCircle2
+        className="size-4 shrink-0 text-green-600"
+        aria-label="Step passed"
+      />
+    );
   }
   if (status === "failed") {
-    return <XCircle className="size-4 shrink-0 text-red-600" aria-label="Step failed" />;
+    return (
+      <XCircle
+        className="size-4 shrink-0 text-red-600"
+        aria-label="Step failed"
+      />
+    );
   }
   if (status === "skipped") {
     return (
-      <CircleMinus className="size-4 shrink-0 text-muted-foreground" aria-label="Step skipped" />
+      <CircleMinus
+        className="size-4 shrink-0 text-muted-foreground"
+        aria-label="Step skipped"
+      />
     );
   }
   return (
@@ -135,19 +171,29 @@ function SortableStep({
   runStatus: StepRunUiStatus;
   onSelect: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
-    id: step.id,
-  });
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({
+      id: step.id,
+    });
   return (
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={`flex items-center gap-2 rounded-lg border px-2 py-2 ${selected ? "bg-muted" : "bg-card"}`}
     >
-      <button type="button" className="cursor-grab text-muted-foreground" {...listeners} {...attributes}>
+      <button
+        type="button"
+        className="cursor-grab text-muted-foreground"
+        {...listeners}
+        {...attributes}
+      >
         <GripVertical className="size-4" />
       </button>
-      <button type="button" className="min-w-0 flex-1 text-left" onClick={onSelect}>
+      <button
+        type="button"
+        className="min-w-0 flex-1 text-left"
+        onClick={onSelect}
+      >
         <p className="truncate text-sm font-medium">{step.name}</p>
         <p className="truncate text-xs text-muted-foreground">{step.kind}</p>
       </button>
@@ -169,23 +215,29 @@ export function ScenarioComposer({
   const [saving, setSaving] = useState(false);
   const [running, setRunning] = useState(false);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
-  const [stepRunStatus, setStepRunStatus] = useState<Record<string, StepRunUiStatus>>({});
+  const [stepRunStatus, setStepRunStatus] = useState<
+    Record<string, StepRunUiStatus>
+  >({});
   const redirectedRef = useRef(false);
   const stepIdsRef = useRef(draft.steps.map((step) => step.id));
   stepIdsRef.current = draft.steps.map((step) => step.id);
   const [clearingBaselines, setClearingBaselines] = useState(false);
   const [baselines, setBaselines] = useState<Baseline[]>([]);
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+  );
   const selected = draft.steps.find((step) => step.id === selectedId) ?? null;
 
   useEffect(() => {
+    console.log("details", scenario);
     setDraft(scenario);
     setSelectedId(scenario.steps[0]?.id ?? "");
   }, [scenario]);
 
   async function parseJson(response: Response) {
     const text = await response.text();
-    if (!text) return {} as { error?: string; cleared?: number; baselines?: Baseline[] };
+    if (!text)
+      return {} as { error?: string; cleared?: number; baselines?: Baseline[] };
     try {
       return JSON.parse(text) as {
         error?: string;
@@ -221,14 +273,17 @@ export function ScenarioComposer({
       try {
         const response = await fetch(`/api/runs/${runId}?slim=1`);
         const payload = await response.json();
-        if (!response.ok || !payload.run || cancelled || redirectedRef.current) return;
+        if (!response.ok || !payload.run || cancelled || redirectedRef.current)
+          return;
         const run = payload.run as TestRun;
         setStepRunStatus(statusesFromRun(run, stepIdsRef.current));
         if (run.status !== "running") {
           redirectedRef.current = true;
           cancelled = true;
           setRunning(false);
-          toast[run.status === "passed" ? "success" : "error"](`Run ${run.status}`);
+          toast[run.status === "passed" ? "success" : "error"](
+            `Run ${run.status}`,
+          );
           router.replace(`/runs/${runId}`);
           window.location.assign(`/runs/${runId}`);
         }
@@ -278,7 +333,9 @@ export function ScenarioComposer({
       const kind = activeId.replace("palette:", "") as ActionKind;
       const step = defaultStep(kind);
       setDraft((current) => {
-        const overIndex = current.steps.findIndex((item) => item.id === String(over.id));
+        const overIndex = current.steps.findIndex(
+          (item) => item.id === String(over.id),
+        );
         const steps = [...current.steps];
         if (overIndex >= 0) steps.splice(overIndex, 0, step);
         else steps.push(step);
@@ -289,10 +346,17 @@ export function ScenarioComposer({
     }
     if (activeId !== String(over.id)) {
       setDraft((current) => {
-        const oldIndex = current.steps.findIndex((step) => step.id === activeId);
-        const newIndex = current.steps.findIndex((step) => step.id === String(over.id));
+        const oldIndex = current.steps.findIndex(
+          (step) => step.id === activeId,
+        );
+        const newIndex = current.steps.findIndex(
+          (step) => step.id === String(over.id),
+        );
         if (oldIndex < 0 || newIndex < 0) return current;
-        return { ...current, steps: arrayMove(current.steps, oldIndex, newIndex) };
+        return {
+          ...current,
+          steps: arrayMove(current.steps, oldIndex, newIndex),
+        };
       });
     }
   }
@@ -317,28 +381,28 @@ export function ScenarioComposer({
   }
 
   async function save() {
-    setSaving(true);
-    try {
-      const response = await fetch(`/api/scenarios/${draft.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: draft.name,
-          description: draft.description,
-          steps: draft.steps,
-          browsers: draft.browsers,
-          device: draft.device,
-        }),
+    const payload = {
+      name: draft.name,
+      description: draft.description,
+      browsers: draft.browsers,
+      device: draft.device,
+      steps: draft.steps.map((step) => ({
+        id: step.id,
+        kind: step.kind,
+        name: step.name,
+        params: step.params,
+      })),
+    };
+    await axios
+      .put(`/api/scenarios/${draft.id}`, payload)
+      .then((res) => {
+        console.log("saved payload", res.data);
+        toast.success("Scenario saved");
+      })
+      .catch((err) => {
+        toast.error(err.message);
       });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "Save failed");
-      setDraft(payload.scenario);
-      toast.success("Scenario saved");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Save failed");
-    } finally {
-      setSaving(false);
-    }
+    setSaving(false);
   }
 
   async function clearBaselines() {
@@ -350,7 +414,8 @@ export function ScenarioComposer({
         body: JSON.stringify({ action: "clear-all" }),
       });
       const payload = await parseJson(response);
-      if (!response.ok) throw new Error(payload.error || "Could not clear baselines");
+      if (!response.ok)
+        throw new Error(payload.error || "Could not clear baselines");
       toast.success(
         payload.cleared
           ? `Cleared ${payload.cleared} baseline${payload.cleared === 1 ? "" : "s"}`
@@ -358,7 +423,9 @@ export function ScenarioComposer({
       );
       setBaselines([]);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not clear baselines");
+      toast.error(
+        error instanceof Error ? error.message : "Could not clear baselines",
+      );
     } finally {
       setClearingBaselines(false);
     }
@@ -372,11 +439,16 @@ export function ScenarioComposer({
         body: JSON.stringify({ action: "delete-one", baselineId }),
       });
       const payload = await parseJson(response);
-      if (!response.ok) throw new Error(payload.error || "Could not clear baseline");
-      setBaselines((current) => current.filter((baseline) => baseline.id !== baselineId));
+      if (!response.ok)
+        throw new Error(payload.error || "Could not clear baseline");
+      setBaselines((current) =>
+        current.filter((baseline) => baseline.id !== baselineId),
+      );
       toast.success("Baseline cleared");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not clear baseline");
+      toast.error(
+        error instanceof Error ? error.message : "Could not clear baseline",
+      );
     }
   }
 
@@ -384,7 +456,9 @@ export function ScenarioComposer({
     await save();
     setRunning(true);
     setStepRunStatus(
-      Object.fromEntries(draft.steps.map((step) => [step.id, "pending" as const])),
+      Object.fromEntries(
+        draft.steps.map((step) => [step.id, "pending" as const]),
+      ),
     );
     try {
       const response = await fetch(`/api/scenarios/${draft.id}/run`, {
@@ -396,7 +470,8 @@ export function ScenarioComposer({
         }),
       });
       const payload = await response.json();
-      if (!response.ok || !payload.run) throw new Error(payload.error || "Run failed");
+      if (!response.ok || !payload.run)
+        throw new Error(payload.error || "Run failed");
       redirectedRef.current = false;
       setActiveRunId(payload.run.id as string);
     } catch (error) {
@@ -407,12 +482,18 @@ export function ScenarioComposer({
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={onDragEnd}
+    >
       <div className="grid gap-4 xl:grid-cols-[16rem_minmax(0,1fr)_18rem]">
         <Card>
           <CardHeader>
             <CardTitle>Action palette</CardTitle>
-            <CardDescription>Drag onto the scenario, or click to append.</CardDescription>
+            <CardDescription>
+              Drag onto the scenario, or click to append.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[32rem]">
@@ -421,7 +502,11 @@ export function ScenarioComposer({
                   <div key={item.kind} className="flex gap-1">
                     <PaletteItem kind={item.kind} />
                     {canEdit ? (
-                      <Button size="icon-sm" variant="ghost" onClick={() => addKind(item.kind)}>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        onClick={() => addKind(item.kind)}
+                      >
                         <Plus />
                       </Button>
                     ) : null}
@@ -446,7 +531,9 @@ export function ScenarioComposer({
                 <Input
                   disabled={!canEdit}
                   value={draft.name}
-                  onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+                  onChange={(event) =>
+                    setDraft({ ...draft, name: event.target.value })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -476,14 +563,19 @@ export function ScenarioComposer({
               <Textarea
                 disabled={!canEdit}
                 value={draft.description}
-                onChange={(event) => setDraft({ ...draft, description: event.target.value })}
+                onChange={(event) =>
+                  setDraft({ ...draft, description: event.target.value })
+                }
               />
             </div>
             <div className="space-y-2">
               <Label>Browsers</Label>
               <div className="flex flex-wrap gap-4">
                 {BROWSERS.map((browser) => (
-                  <label key={browser} className="flex items-center gap-2 text-sm">
+                  <label
+                    key={browser}
+                    className="flex items-center gap-2 text-sm"
+                  >
                     <Checkbox
                       checked={draft.browsers.includes(browser)}
                       disabled={!canEdit}
@@ -492,7 +584,9 @@ export function ScenarioComposer({
                           ...current,
                           browsers: checked
                             ? [...current.browsers, browser]
-                            : current.browsers.filter((item) => item !== browser),
+                            : current.browsers.filter(
+                                (item) => item !== browser,
+                              ),
                         }));
                       }}
                     />
@@ -502,7 +596,10 @@ export function ScenarioComposer({
               </div>
             </div>
             <DropCanvas>
-              <SortableContext items={draft.steps.map((step) => step.id)} strategy={verticalListSortingStrategy}>
+              <SortableContext
+                items={draft.steps.map((step) => step.id)}
+                strategy={verticalListSortingStrategy}
+              >
                 {draft.steps.length === 0 ? (
                   <p className="p-6 text-center text-sm text-muted-foreground">
                     Drop actions here to build the flow.
@@ -527,12 +624,20 @@ export function ScenarioComposer({
             {canEdit ? (
               <div className="flex flex-wrap gap-2">
                 <Button onClick={save} disabled={saving}>
-                  {saving ? <Loader2 className="animate-spin" data-icon="inline-start" /> : null}
+                  {saving ? (
+                    <Loader2
+                      className="animate-spin"
+                      data-icon="inline-start"
+                    />
+                  ) : null}
                   Save scenario
                 </Button>
                 <Button variant="secondary" onClick={run} disabled={running}>
                   {running ? (
-                    <Loader2 className="animate-spin" data-icon="inline-start" />
+                    <Loader2
+                      className="animate-spin"
+                      data-icon="inline-start"
+                    />
                   ) : (
                     <Play data-icon="inline-start" />
                   )}
@@ -544,7 +649,10 @@ export function ScenarioComposer({
                   disabled={clearingBaselines || running}
                 >
                   {clearingBaselines ? (
-                    <Loader2 className="animate-spin" data-icon="inline-start" />
+                    <Loader2
+                      className="animate-spin"
+                      data-icon="inline-start"
+                    />
                   ) : (
                     <Eraser data-icon="inline-start" />
                   )}
@@ -552,7 +660,9 @@ export function ScenarioComposer({
                 </Button>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">View-only role — sharing still lets you inspect the chain.</p>
+              <p className="text-sm text-muted-foreground">
+                View-only role — sharing still lets you inspect the chain.
+              </p>
             )}
           </CardContent>
         </Card>
@@ -570,7 +680,9 @@ export function ScenarioComposer({
                   <Input
                     disabled={!canEdit}
                     value={selected.name}
-                    onChange={(event) => updateSelected({ name: event.target.value })}
+                    onChange={(event) =>
+                      updateSelected({ name: event.target.value })
+                    }
                   />
                 </div>
                 {selectedFields.map((field) => (
@@ -583,7 +695,10 @@ export function ScenarioComposer({
                         value={selected.params[field.key] ?? ""}
                         onChange={(event) =>
                           updateSelected({
-                            params: { ...selected.params, [field.key]: event.target.value },
+                            params: {
+                              ...selected.params,
+                              [field.key]: event.target.value,
+                            },
                           })
                         }
                       />
@@ -594,7 +709,10 @@ export function ScenarioComposer({
                         value={selected.params[field.key] ?? ""}
                         onChange={(event) =>
                           updateSelected({
-                            params: { ...selected.params, [field.key]: event.target.value },
+                            params: {
+                              ...selected.params,
+                              [field.key]: event.target.value,
+                            },
                           })
                         }
                       />
@@ -614,12 +732,16 @@ export function ScenarioComposer({
                       value={selected.params.waitMs ?? "0"}
                       onChange={(event) =>
                         updateSelected({
-                          params: { ...selected.params, waitMs: event.target.value },
+                          params: {
+                            ...selected.params,
+                            waitMs: event.target.value,
+                          },
                         })
                       }
                     />
                     <p className="text-xs text-muted-foreground">
-                      Pause after this action before the next step. Use 0 for no extra wait.
+                      Pause after this action before the next step. Use 0 for no
+                      extra wait.
                     </p>
                   </div>
                 ) : null}
@@ -654,8 +776,12 @@ export function ScenarioComposer({
                               className="space-y-1.5 rounded-lg border p-2"
                             >
                               <div className="flex flex-wrap items-center gap-1.5">
-                                <Badge variant="outline">{baseline.browser}</Badge>
-                                <Badge variant="secondary">{baseline.device}</Badge>
+                                <Badge variant="outline">
+                                  {baseline.browser}
+                                </Badge>
+                                <Badge variant="secondary">
+                                  {baseline.device}
+                                </Badge>
                               </div>
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
@@ -664,7 +790,8 @@ export function ScenarioComposer({
                                 className="w-full rounded-md ring-1 ring-foreground/10"
                               />
                               <figcaption className="text-[11px] text-muted-foreground">
-                                Updated {new Date(baseline.updatedAt).toLocaleString()}
+                                Updated{" "}
+                                {new Date(baseline.updatedAt).toLocaleString()}
                               </figcaption>
                               {canEdit ? (
                                 <Button
@@ -672,7 +799,9 @@ export function ScenarioComposer({
                                   size="xs"
                                   variant="outline"
                                   className="w-full"
-                                  onClick={() => void clearOneBaseline(baseline.id)}
+                                  onClick={() =>
+                                    void clearOneBaseline(baseline.id)
+                                  }
                                 >
                                   <Eraser data-icon="inline-start" />
                                   Clear baseline
@@ -693,7 +822,9 @@ export function ScenarioComposer({
                 ) : null}
               </>
             ) : (
-              <p className="text-sm text-muted-foreground">Select a step to edit its fields.</p>
+              <p className="text-sm text-muted-foreground">
+                Select a step to edit its fields.
+              </p>
             )}
           </CardContent>
         </Card>

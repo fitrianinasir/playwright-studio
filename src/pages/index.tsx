@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Scenario } from "@/lib/newTypes";
 import axios from "axios";
 import { useRouter } from "next/router";
+import { DEVICE_PRESETS } from "@/lib/studio-types";
 export default function HomePage() {
   const router = useRouter();
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
@@ -41,8 +42,8 @@ export default function HomePage() {
     const payload: Scenario = {
       name: name,
       description: description,
-      browsers: [],
-      device: "",
+      browsers: ["chromium"],
+      device: DEVICE_PRESETS[0].id,
       user_id: "4e2d4559-dac9-4b9d-a019-92162f3373be",
     };
 

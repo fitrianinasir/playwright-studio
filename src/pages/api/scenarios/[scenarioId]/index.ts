@@ -15,24 +15,58 @@ export default async function handler(
   const scenarioId = firstQuery(req.query.scenarioId);
 
   if (req.method === "GET") {
-    const scenario = await prisma.scenario.findUnique({
-      where: { id: scenarioId },
-      include: { steps: true },
-    });
-    res.status(200).json({ scenario });
-    return;
+    try {
+      const scenario = await prisma.scenario.findUnique({
+        where: { id: scenarioId },
+        include: { steps: true },
+      });
+      return res.status(200).json({ scenario });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Could not load scenario.";
+      return jsonError(res, message, 500);
+    }
   }
 
   if (req.method === "PUT") {
-    const body = (req.body ?? {}) as {
-      name?: string;
-      description?: string;
-      steps?: ScenarioStep[];
-      browsers?: BrowserName[];
-      device?: DevicePreset;
-    };
-    res.status(200).json({ scenario: updateScenario(scenarioId, body) });
-    return;
+    try {
+      const { steps, id, createdAt, updatedAt, user, ...rest } = req.body ?? {};
+      const scenario = await prisma.scenario.update({
+        where: { id: scenarioId },
+        data: {
+          name: rest.name,
+          description: rest.description,
+          browsers: rest.browsers,
+          device: rest.device ?? "",
+          ...(Array.isArray(steps)
+            ? {
+                steps: {
+                  deleteMany: {},
+                  create: steps.map(
+                    (step: {
+                      id?: string;
+                      kind: string;
+                      name: string;
+                      params: unknown;
+                    }) => ({
+                      ...(step.id ? { id: step.id } : {}),
+                      kind: step.kind,
+                      name: step.name,
+                      params: step.params ?? {},
+                    }),
+                  ),
+                },
+              }
+            : {}),
+        },
+        include: { steps: true },
+      });
+      return res.status(200).json({ scenario });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Could not update scenario.";
+      return jsonError(res, message, 500);
+    }
   }
 
   if (req.method === "DELETE") {
